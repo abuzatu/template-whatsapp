@@ -76,3 +76,11 @@ selenium-start:
 
 selenium-ssh:
 	docker exec -i -t standalone-chromium /bin/bash
+
+run_whatsapp_send_message:
+	./bin/dev/docker-exec.sh poetry run dotenv run ipython \
+	bin/run/run_whatsapp_send_message.py \
+	data/input/contacts1.txt \
+	data/input/message1.txt \
+	data/input/attachment_image.png \
+	data/input/attachment_text.txt
