@@ -2703,23 +2703,6 @@ files = [
 ]
 
 [[package]]
-name = "pytickersymbols"
-version = "1.13.0"
-description = "The lib provides ticker symbols for yahoo and google finance."
-category = "main"
-optional = false
-python-versions = "*"
-files = [
-    {file = "pytickersymbols-1.13.0-py3-none-any.whl", hash = "sha256:57dbbce07418d63a451e24371179ce3710fe75659ad5a4f0320a9541268e50a4"},
-    {file = "pytickersymbols-1.13.0.tar.gz", hash = "sha256:5b69f2f2d91b68459f828b287a88b2630a9d72d9487b3704f6dd92ecdbf20ee6"},
-]
-
-[package.dependencies]
-packaging = "*"
-PyYAML = "6.0"
-wheel = "0.38.4"
-
-[[package]]
 name = "pytz"
 version = "2022.7.1"
 description = "World timezone definitions, modern and historical"
@@ -3775,21 +3758,6 @@ optional = ["python-socks", "wsaccel"]
 test = ["websockets"]
 
 [[package]]
-name = "wheel"
-version = "0.38.4"
-description = "A built-package format for Python"
-category = "main"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "wheel-0.38.4-py3-none-any.whl", hash = "sha256:b60533f3f5d530e971d6737ca6d58681ee434818fab630c83a734bb10c083ce8"},
-    {file = "wheel-0.38.4.tar.gz", hash = "sha256:965f5259b566725405b05e7cf774052044b1ed30119b5d586b2703aafe8719ac"},
-]
-
-[package.extras]
-test = ["pytest (>=3.0.0)"]
-
-[[package]]
 name = "widgetsnbextension"
 version = "4.0.5"
 description = "Jupyter interactive widgets for Jupyter Notebook"
@@ -3835,4 +3803,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "b15d24798a9dc6385550599fec4fede4c37f5a3bc0e623d789f45cdb8c925db5"
+content-hash = "86d95cb42e86eff106b346a6038f24e932606c648f10cd5d0740514af20edf87"
