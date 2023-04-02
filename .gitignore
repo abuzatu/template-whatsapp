@@ -3,3 +3,6 @@
 
 .env
 .bashrc
+
+notebooks/*/*.png
+notebooks/*/*.html
