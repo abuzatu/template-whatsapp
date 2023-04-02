@@ -4,14 +4,7 @@ RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get -y install curl build-essential libpq-dev openssh-client procps \
     wget gnupg2 unzip sudo \
-    less emacs23-nox \
-    x11vnc
-
-# ENV SE_VNC_NO_PASSWORD=1
-# ENV SE_VNC_VIEW_ONLY=1
-
-# ENV DISPLAY=:1
-# EXPOSE 5901
+    less emacs23-nox
 
 ENV WORKDIR /opt/template-whatsapp
 ENV PYTHONPATH $PYTHONPATH:$WORKDIR/src
@@ -21,13 +14,10 @@ RUN groupadd --gid 1000 jumbo && \
     adduser --system jumbo --uid 1000 --gid 1000 && \
     echo 'jumbo:mypassword' | chpasswd && \
     chown -R jumbo:jumbo $WORKDIR
-RUN echo 'jumbo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+# if needed to have the ability to sudo
+# RUN echo 'jumbo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 USER jumbo
 ENV HOME=/home/jumbo
-
-# RUN mkdir -p $HOME/.vnc
-# RUN touch $HOME/.vnc/passwd
-# RUN x11vnc -storepasswd adrian $HOME/.vnc/passwd
 
 COPY --chown=jumbo:jumbo .bashrc $WORKDIR
 RUN ln -s $WORKDIR/.bashrc $HOME/.bashrc

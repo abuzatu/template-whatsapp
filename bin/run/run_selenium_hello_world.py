@@ -32,6 +32,7 @@ end = time.time()
 duration_seconds = end - start
 duration_minutes = duration_seconds / 60.0
 print(
+    "Driver created. "
     f"duration_seconds={duration_seconds:.1f} seconds, "
     f"duration_minutes={duration_minutes:.1f} minutes."
 )
@@ -51,4 +52,4 @@ print("test07")
 time.sleep(30)
 
 driver.quit()
-print("test08")
+print("Quitting driver.")
