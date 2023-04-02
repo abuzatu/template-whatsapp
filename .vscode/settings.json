@@ -1,0 +1,79 @@
+{
+    "workbench.colorTheme": "Default Dark+",
+    //"[python]": {
+    //    "editor.formatOnType": true
+    //},
+    "terminal.integrated.defaultProfile": "/bin/bash",
+    "python.analysis.missingImportsSeverity": "none",
+    "jupyter.interactiveWindow.creationMode": "perFile",
+    "editor.rulers": [
+        90
+    ],
+    "workbench.colorCustomizations": {
+        "editorRuler.foreground": "#ff4081"
+    },
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": true,
+        "source.fixAll.black": true,
+        "source.fixAll.flake8": true,
+        "source.fixAll.pydocstyle": true,
+        "source.fixAll.mypy": true,
+    },
+    //"git.autofetch": true,
+    "python.formatting.provider": "black",
+    "python.formatting.blackArgs": [
+        "--line-length",
+        "90"
+    ],
+    "python.linting.enabled": true,
+    "python.linting.flake8Enabled": true,
+    "python.linting.flake8Args": [
+        "--max-line-length=90",
+        //"--ignore=E402,F841,F401,E302,E305",
+    ],
+    "python.linting.pydocstyleEnabled": true,
+    "python.linting.pydocstyleArgs": [
+        "--convention=google"
+    ],
+    "python.linting.mypyEnabled": true,
+    "python.linting.mypyCategorySeverity.error": "Warning",
+    "python.linting.mypyArgs": [
+        "--ignore-missing-imports",
+        "--follow-imports=skip",
+        //"--show-column-numbers",
+        "--disallow-untyped-defs",
+        //"--disallow-untyped-calls"
+    ],
+    "files.associations": {
+        "*.csv": "plaintext"
+    },
+    "[plaintext]": {
+        "editor.formatOnSave": false,
+        "editor.formatOnPaste": false
+    },
+    "python.languageServer": "Pylance",
+    "python.analysis.disabled": [
+        "unresolved-import",
+        "unreachable",
+        "unused-imports"
+    ],
+    "python.analysis.extraPaths": [
+        "./src"
+    ],
+    "python.analysis.memory.keepLibraryAst": true,
+    "python.analysis.memory.keepLibraryLocalVariables": true,
+    "python.analysis.memory.keepLibraryAstValue": true,
+    "python.analysis.typeCheckingMode": "off",
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.python"
+    },
+    "notebook.cellLanguageMappings": {
+        "python": {
+            "language": "python",
+            "configuration": {
+                "python.analysis.mode": "off"
+            }
+        }
+    }
+}
