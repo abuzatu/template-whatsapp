@@ -65,8 +65,14 @@ streamlit_original_02:
 kill_streamlit:
 	ps aux | grep streamlit | awk '{print $2}' | xargs kill -9
 
+kill_chromium:
+	ps -x| grep usr/lib/chromium/chromium | awk '{print $2}' | xargs kill -9
+
 clean_pycache:
 	find . -type d -name "__pycache__" -exec rm -rf {} \;
+
+selenium-stop:
+	docker stop standalone-chromium && docker rm standalone-chromium
 
 selenium-start:
 	docker run --rm -it -d -p 4444:4444 -p 5900:5900 -p 7900:7900 \
