@@ -71,17 +71,29 @@ kill_chromium:
 clean_pycache:
 	find . -type d -name "__pycache__" -exec rm -rf {} \;
 
-selenium-stop:
-	docker stop standalone-chromium && docker rm standalone-chromium
+chromium-stop:
+	./bin/dev/docker-chromium-stop.sh
 
-selenium-start:
-	docker run --rm -it -d -p 4444:4444 -p 5900:5900 -p 7900:7900 \
-	--name standalone-chromium --shm-size 2g seleniarm/standalone-chromium:latest && \
-	docker exec -i -t standalone-chromium \
-	mkdir -p /home/seluser/.config/chromium/google-chrome/Whatsapp
+chromium-start:
+	./bin/dev/docker-chromium-start.sh
 
-selenium-ssh:
-	docker exec -i -t standalone-chromium /bin/bash
+chromium-ssh:
+	./bin/dev/docker-chromium-ssh.sh
+
+restart:
+	echo "Restarting all:"
+	echo "Stopping chromium docker."
+	./bin/dev/docker-chromium-stop.sh
+	echo "Restarting chromium docker."
+	./bin/dev/docker-chromium-start.sh
+	echo "Stopping main docker."
+	./bin/dev/docker-stop.sh
+	echo "Restarting main container."
+	./bin/dev/docker-start.sh
+	echo "Restarting iPython."
+	./bin/dev/ipython-start.sh
+	echo "All done"
+
 
 run_whatsapp_send_message:
 	./bin/dev/docker-exec.sh poetry run dotenv run ipython \
