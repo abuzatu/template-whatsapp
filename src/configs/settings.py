@@ -73,3 +73,36 @@ def work_dir() -> Path:
         return Path(__file__).parent.parent
     else:
         return Path(WORK_DIR)
+
+
+""" Web driver for Whatsapp """
+
+# used when running from local Docker
+# currently we run from the standalone chromium, so it will not be used
+EXECUTABLE_PATH = "/usr/local/bin/chromedriver"
+
+# to avoid to scan the Whatsapp query for every script
+# we set the chrome profile path to a particular folder
+# that will be used every time
+# remove Default from below and replace with our new folder called "Whatsapp"
+# MacOS: /Users/abuzatu/Library/Application Support/Google/Chrome/Default
+# Linux: home/abuzatu/.config/google-chrome/default
+CHROME_PROFILE_PATH = (
+    "user-data-dir="
+    # when running locally on MacOS:
+    # "/Users/abuzatu/Library/Application Support/Google/Chrome/Whatsapp"
+    # when running in one Docker for Intel processor
+    # without standalone chrome image, but where chromedriver installed locally
+    # "$HOME/.config/google-chrome/Whatsapp"
+    # when running using the standalone chrome image
+    # we create by hand this folder there
+    "/home/seluser/.config/chromium/google-chrome/Whatsapp"
+)
+
+WAIT_FOR_QR_CODE_SCAN = 100  # seconds
+
+WAIT_FOR_SEARCH_BOX = 100  # seconds
+
+WAIT_AFTER_EACH_CONTACT = 5  # seconds
+
+NUM_FIRST_COUNTERS_TO_SKIP = 2  # number
