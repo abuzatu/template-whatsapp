@@ -2,6 +2,7 @@
 
 import utils.sum
 
+
 class Sum:
     """Class to do Sum."""
 
@@ -18,8 +19,9 @@ class Sum:
         """Run all."""
         sum = 0.0
         for i in range(self.N):
-            sum+=utils.sum.my_sum(float(i), 10.0)
+            sum += utils.sum.my_sum(float(i), 10.0)
             print(f"i={i}, sum if i and 10 is {sum}")
+
 
 if __name__ == "__main__":
     do_test = False

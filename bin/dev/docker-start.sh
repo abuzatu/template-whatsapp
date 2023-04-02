@@ -11,7 +11,7 @@ else
     # expose port for FastAPI: 8012
     # expose port for streamlit: 8502
     # expose port for Jupyter Notebook: 1336
-    # --link selenium-chrome-debug:debug
+    # for Selenium & ChromeDriver for Whatsapp: --link standalone-chromium --shm-size=2g
     docker run -i -d \
             -v $HOME/.ssh:/home/jumbo/.ssh \
             -v `pwd`:/opt/$PROJECT_NAME \
@@ -19,11 +19,9 @@ else
             -p 8012:8012 \
             -p 8502:8502 \
             -p 1336:1336 \
-            -p 5901:5901 \
-            --link standalone-chromium \
+            --link standalone-chromium --shm-size=2g \
             --name $PROJECT_NAME \
-            --shm-size=2g \
             -t $PROJECT_NAME:latest \
             /bin/bash
-    docker exec -i -t $PROJECT_NAME poetry install
+    # docker exec -i -t $PROJECT_NAME poetry install
 fi
