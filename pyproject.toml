@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "app"
 version = "0.1.0"
-description = "template for Docker with FastAPI"
+description = "template for Docker with Whatsapp"
 authors = ["Adrian Buzatu"]
 readme = "README.md"
 
@@ -26,10 +26,7 @@ fastapi-utils = "^0.2.1"
 streamlit = "^1.20.0"
 scikit-learn = "^1.2.2"
 bokeh = "2.4.3"
-yfinance = "^0.2.14"
-pandas-datareader = "^0.10.0"
 pytickersymbols = "^1.13.0"
-yahoo-ticker-downloader = "^3.0.1"
 selenium = "^4.8.3"
 
 
