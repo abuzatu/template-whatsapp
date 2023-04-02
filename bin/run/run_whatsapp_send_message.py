@@ -4,6 +4,7 @@ import sys
 
 from utils.logger import request_logger
 from cli.cli_send_message import CLI
+from whatsapp.send_message import SendMessage
 
 
 def main() -> None:
@@ -11,6 +12,8 @@ def main() -> None:
     request_logger.info(f"Start __main__ for Whatsapp with sys.argv={sys.argv}")
     cli = CLI(sys.argv)
     print(cli)
+    sm = SendMessage(cli)
+    sm.fit()
 
 
 if __name__ == "__main__":
