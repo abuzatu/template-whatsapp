@@ -35,7 +35,8 @@ lint:
 	./bin/dev/docker-exec.sh poetry run black src &&\
 	./bin/dev/docker-exec.sh poetry run flake8 --max-line-length=90 src &&\
 	./bin/dev/docker-exec.sh poetry run pydocstyle --convention=google &&\
-	./bin/dev/docker-exec.sh poetry run mypy --follow-imports=skip --ignore-missing-imports --disallow-untyped-defs
+	./bin/dev/docker-exec.sh poetry run mypy --follow-imports=skip \
+	--ignore-missing-imports --disallow-untyped-defs
 
 test:
 	./bin/dev/docker-exec.sh poetry run pytest -s
@@ -66,3 +67,12 @@ kill_streamlit:
 
 clean_pycache:
 	find . -type d -name "__pycache__" -exec rm -rf {} \;
+
+selenium-start:
+	docker run --rm -it -d -p 4444:4444 -p 5900:5900 -p 7900:7900 \
+	--name standalone-chromium --shm-size 2g seleniarm/standalone-chromium:latest && \
+	docker exec -i -t standalone-chromium \
+	mkdir -p /home/seluser/.config/chromium/google-chrome/Whatsapp
+
+selenium-ssh:
+	docker exec -i -t standalone-chromium /bin/bash

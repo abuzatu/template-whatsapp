@@ -54,7 +54,9 @@ async def generate_recommendations(
     request_logger.info("TEST")
     response_asset_name = request_data.asset_name
     response_price = sorted(
-        np.random.normal(loc=request_data.price, scale=request_data.price / 10.0, size=10)
+        np.random.normal(
+            loc=request_data.price, scale=request_data.price / 10.0, size=10
+        )
     )
     response = {
         "asset_name": response_asset_name,
