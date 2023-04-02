@@ -5,6 +5,7 @@ RUN apt-get update && \
     apt-get -y install curl build-essential libpq-dev openssh-client procps \
     wget gnupg2 unzip sudo \
     less emacs23-nox
+# add if want to run GUI inside our docker from our local machine: x11vnc
 
 ENV WORKDIR /opt/template-whatsapp
 ENV PYTHONPATH $PYTHONPATH:$WORKDIR/src

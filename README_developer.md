@@ -343,6 +343,8 @@ RUN LATEST=`curl -s https://chromedriver.storage.googleapis.com/LATEST_RELEASE` 
 ```
 With these you only need one Dockerfile. 
 
+Documentation on these steps you can find at this [https://www.reddit.com/r/docker/comments/vhys64/running_selenium_with_chromedriver_via_docker_on/](Reddit post).
+
 For Whatsapp to not have to scan every time, you create a new profile folder in your Docker.
 ```
 mkdir -p /home/jumbo/.config/google-chrome/Whatsapp
@@ -362,7 +364,7 @@ The original instruction was this
 ```
 docker run --rm -it -p 4444:4444 -p 5900:5900 -p 7900:7900 --shm-size 2g seleniarm/standalone-chromium:latest
 ```
-A [https://www.youtube.com/watch?v=rAia60kxth8](Youtube video) that explains these steps is here.
+A [https://www.youtube.com/watch?v=rAia60kxth8](Youtube video) that explains these steps is here. Also a [https://stackoverflow.com/questions/66478751/seleniumwebdrivererror-chrome-crashed-on-m1-chip](StackOverflow) post, and in a [https://github.com/SeleniumHQ/selenium/issues/9733](Docker post). And about XServer also explained in a [https://thespecguy.medium.com/launching-google-chrome-on-docker-container-a7dc2ba2d5](Medium post).
 
 Then ssh into the container
 ```
@@ -376,6 +378,29 @@ But you can create also from the outside
 ```
 docker exec -i -t standalone-chromium mkdir -p /home/seluser/.config/chromium/google-chrome/Whatsapp
 ```
+Already at start, it has these processes open, if you check `ps -x` from the Terminal (you can do from Docker Desktop too)
+```
+$ ps -x
+  PID TTY      STAT   TIME COMMAND
+    1 pts/0    Ss+    0:00 bash /opt/bin/entry_point.sh
+    8 pts/0    S+     0:00 /usr/bin/python3 /usr/bin/supervisord --configuration /etc/supervisord.conf
+   15 pts/0    S      0:00 bash /opt/bin/start-xvfb.sh
+   16 pts/0    S      0:00 bash /opt/bin/start-vnc.sh
+   18 pts/0    S      0:00 bash /opt/bin/start-novnc.sh
+   20 pts/0    S      0:00 /bin/sh /usr/bin/xvfb-run --server-num=99 --listen-tcp --server-args=-screen 0 1360x1020x24 -fbdir /var/tmp -dpi 96 -li
+   21 pts/0    S      0:00 bash -c /opt/bin/start-selenium-standalone.sh; EXIT_CODE=$?; kill -s SIGINT `cat /var/run/supervisor/supervisord.pid`; 
+   23 pts/0    S      0:00 bash /opt/bin/noVNC/utils/novnc_proxy --listen 7900 --vnc localhost:5900
+   29 pts/0    S      0:00 bash /opt/bin/start-selenium-standalone.sh
+   46 pts/0    S      0:00 python3 -m websockify --web /opt/bin/noVNC/utils/../ 7900 localhost:5900
+   50 pts/0    Sl     0:00 Xvfb :99 -screen 0 1360x1020x24 -fbdir /var/tmp -dpi 96 -listen tcp -noreset -ac +extension RANDR -auth /tmp/xvfb-run.F
+   78 pts/0    S      0:01 /usr/bin/fluxbox -display :99.0
+   85 pts/0    Sl     0:03 java -Dwebdriver.http.factory=jdk-http-client -jar /opt/selenium/selenium-server.jar --ext /opt/selenium/selenium-http-
+  135 pts/0    S      0:00 x11vnc -usepw -forever -shared -rfbport 5900 -rfbportv6 5900 -display :99.0
+  136 pts/1    Ss     0:00 /bin/sh
+  142 pts/1    R+     0:00 ps -x
+$ 
+```
+
 
 To find the IP of this container
 ```
@@ -465,6 +490,8 @@ What worked was the version without `VNC`, so going to the brower and typing [ht
 #### What did not work for me.
 
 We can do that via the `vncviewer` software, but in the end it did not work. Here are some things I tried for future reference if we want to try it.
+
+Documentation about the [https://wiki.archlinux.org/title/x11vnc](x11vnc).
 
 On local machine install [https://tigervnc.org](TigerVNC).
 ```
