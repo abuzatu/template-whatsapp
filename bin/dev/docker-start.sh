@@ -19,9 +19,10 @@ else
             -p 8012:8012 \
             -p 8502:8502 \
             -p 1336:1336 \
-            --link standalone-chromium --shm-size=2g \
+            --link standalone-chromium \
+            --shm-size=2g \
             --name $PROJECT_NAME \
             -t $PROJECT_NAME:latest \
             /bin/bash
-    # docker exec -i -t $PROJECT_NAME poetry install
+    docker exec -i -t $PROJECT_NAME poetry install
 fi

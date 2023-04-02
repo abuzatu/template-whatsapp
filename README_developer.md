@@ -352,12 +352,18 @@ mkdir -p /home/jumbo/.config/google-chrome/Whatsapp
 
 The method above did not work for M1. `make build` would fail. If we used `make build-m1`, it would not fail, but it would fail in `ipython` or `Jupyter Notebook` when we create the `driver` object, even if pointing to the right path of the `chromedriver` locally. The libraries are not compative with M1.
 
-The solution is to use a second second container with `standalone-chromium`. `Chromium` is the open source platform on which `Chrome` is built, also from Google. Basically it is like a `Chrome` browser. We build a container based on this image. The selenium does not offer for M1, but the selenium community fork from it and create for M1 and offer the image.
+The solution is to use a second second container from the image `seleniarm` for `standalone-chromium`. Note `arm` for the M1 processor. `Chromium` is the open source platform on which `Chrome` is built, also from Google. Basically it is like a `Chrome` browser. We build a container based on this image. The selenium does not offer for M1, but the selenium community fork from it and create for M1 and offer the image. Its [Chromedriver is here](https://chromedriver.chromium.org/downloads). The [https://www.browserstack.com/guide/difference-between-chrome-and-chromium](differences between Chrome and Chromium) explained here.
 
-We start this container with
+We start this container (which will also download the image), as explained by [https://github.com/seleniumhq-community/docker-seleniarm](GitHub.com/SeleniumHQ-Community/docker-seleriarm), to which we add `-d` (detached mode, to give us back access to terminal) and create a name of the container by adding `--name standalone-chromium` (to be used later to link it into our `template-whatsapp` container) 
 ```
 docker run --rm -it -d -p 4444:4444 -p 5900:5900 -p 7900:7900 --name standalone-chromium --shm-size 2g seleniarm/standalone-chromium:latest
 ```
+The original instruction was this
+```
+docker run --rm -it -p 4444:4444 -p 5900:5900 -p 7900:7900 --shm-size 2g seleniarm/standalone-chromium:latest
+```
+A [https://www.youtube.com/watch?v=rAia60kxth8](Youtube video) that explains these steps is here.
+
 Then ssh into the container
 ```
 docker exec -i -t standalone-chromium /bin/bash
@@ -366,6 +372,11 @@ To not have to scan `Whatsapp` at every login, create a folder to remind the `Wh
 ```
 mkdir -p /home/seluser/.config/chromium/google-chrome/Whatsapp
 ```
+But you can create also from the outside 
+```
+docker exec -i -t standalone-chromium mkdir -p /home/seluser/.config/chromium/google-chrome/Whatsapp
+```
+
 To find the IP of this container
 ```
 docker inspect standalone-chromium
@@ -380,22 +391,88 @@ We link this second container to our main container `template-whatsapp` in `./bi
         --link standalone-chromium \
 ```
 
-### Monitor the webdriver from the outside
-
 We can test all the steps with
 ```
 poetry run dotenv run ipython bin/run/run_selenium_hello_world.py
 ```
+Or to be more visual, start `ipython` with 
+```
+make ipython
+```
+and paste there the content of `run_selenium_hello_world.py` as here.
+
+Note that sometimes it takes several minutes for the `driver` object to be built and sometimes it is fast, but also can lead to timeouts.
+```
+"""Module to run in one go the selenium hello world."""
+
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+import time
+
+print("test01")
+# CHROME_PROFILE_PATH="user-data-dir=$HOME/.config/google-chrome/Whatsapp"
+CHROME_PROFILE_PATH = (
+    "user-data-dir=/home/seluser/.config/chromium/google-chrome/Whatsapp"
+)
+# remove Default from below and replace with our new folder called "Whatsapp"
+# MacOS: /Users/abuzatu/Library/Application Support/Google/Chrome/Default
+# Linux: home/abuzatu/.config/google-chrome/default
+
+print("test02")
+# Set up Chrome options
+chrome_options = Options()
+# chrome_options.add_argument('--headless') # Commented out
+chrome_options.add_argument("--no-sandbox")
+chrome_options.add_argument("--disable-dev-shm-usage")
+chrome_options.add_argument("--disable-gpu")
+chrome_options.add_argument(CHROME_PROFILE_PATH)
+
+print("test03")
+# Start ChromeDriver
+driver = webdriver.Remote(
+    command_executor="http://standalone-chromium:4444/wd/hub", options=chrome_options
+)
+print("test04")
+driver.maximize_window()
+
+driver.get("https://www.google.com")
+print("test05")
+time.sleep(5)
+
+driver.get("https://www.hotnews.ro/sport")
+print("test06")
+time.sleep(5)
+
+driver.get("https://web.whatsapp.com")
+print("test07")
+time.sleep(30)
+
+print("test08")
+```
+
+A hello world to query the first page at google is on [https://stackoverflow.com/questions/59482607/how-can-i-use-selenium-python-to-do-a-google-search-and-then-open-the-results](StackOverflow). It did not work for me as first it asks to accept some cookies, so you can not search Google directly.
+
+Another example here on [https://stackoverflow.com/questions/61805008/using-selenium-standalone-chrome-in-docker-compose-connecting-with-pythons-sele](StackOverflow), including `docker compose` between the container of standalone selenium and the docker with Python.
+
+### Monitor the webdriver from the outside 
 
 From our local machine we want to monitor and interacted with the webdriver. Below is what I tried, and some sources I studied. Main reference is the [https://github.com/SeleniumHQ/docker-selenium#debugging](README.md) of `SeleniumHQ/docker-selenium` on `Debugging`, as it is for Debugging that we connect from the localmachine to the webserver inside. 
 
+#### What worked for me
 
+What worked was the version without `VNC`, so going to the brower and typing [http://localhost:7900](http://localhost:7900), then setting the password `secret`. Also you can check the sessions that exist here [http://localhost:4444/ui#/sessions](http://localhost:4444/ui#/sessions). If using `VNC` see below, it should be here [http://localhost:5900](http://localhost:5900), but it did not work for me.
+
+#### What did not work for me.
 
 We can do that via the `vncviewer` software, but in the end it did not work. Here are some things I tried for future reference if we want to try it.
 
-On local machine start vncviewer and giving it the password `adrian` set in the Docker container.
+On local machine install [https://tigervnc.org](TigerVNC).
 ```
 brew install tiger-vnc
+```
+
+Then start `vncviewer` and giving it the password `adrian` set in the Docker container.
+```
 vncviewer -SecurityTypes VncAuth -passwd <<< "adrian" localhost:5901
 ```
 Maybe to try port 5900 instead?
@@ -411,4 +488,4 @@ docker run -d -p 4444:4444 -p 5900:5900 selenium/standalone-chrome-debug
 ```
 
 
-What worked was the version without vnc, so going to the brower and typing ```http://localhost:7900`, then setting the password `secret`.
+
