@@ -1,13 +1,13 @@
 """Send message, either with or without attachment."""
 
 import time
+from typing import List, Optional
 
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 
-from cli.cli_send_message import CLI
 from utils.logger import request_logger
 from whatsapp.web_driver import Driver
 
@@ -20,22 +20,39 @@ from configs.settings import (
 class SendMessage:
     """Class SendMessage."""
 
-    def __init__(self, cli: CLI) -> None:
+    def __init__(self) -> None:
         """Initialize."""
-        self.cli = cli
         self.driver = Driver().fit()
         self.driver.get("https://web.whatsapp.com")
 
+    def set_inputs(
+        self,
+        contacts: List[str],
+        message: str,
+        attachment_image: Optional[str],
+        attachment_text: Optional[str],
+    ) -> None:
+        """Set inputs."""
+        self.contacts = contacts
+        self.message = message
+        self.attachment_image = attachment_image
+        self.attachment_text = attachment_text
+
     def fit(self) -> None:
         """Fit. Send the message."""
-        for contact in self.cli.contacts:
+        for contact in self.contacts:
             request_logger.info(f"Process contact={contact}")
             request_logger.info("Start search_box()")
+            time.sleep(3)
             self.search_box(contact)
             request_logger.info("Start get_contact()")
-            time.sleep(10)
+            time.sleep(3)
             self.get_contact(contact)
-            request_logger.info("Start receive_messages()")
+            request_logger.info("Start send message()")
+            time.sleep(3)
+            self.send_message()
+            request_logger.info("Start send message()")
+            time.sleep(3)
 
         # quit the driver (closes all windows)
         self.driver.quit()
@@ -51,7 +68,7 @@ class SendMessage:
         """
         xpath = (
             "//div"
-            # '[@contenteditable="true"]'
+            '[@contenteditable="true"]'
             '[@data-testid="chat-list-search"]'
             '[@title="Search input textbox"]'
             '[@data-tab="3"]'
@@ -79,7 +96,12 @@ class SendMessage:
             request_logger.info(f"again3 box={box}")
         # clear the box if any previous info
         # needed for the further elements in the for loop
-        box.clear()
+        # box.clear()
+        # clear does not work, so select all, then delete
+        # for linux machine like inside docker use CONTROL
+        box.send_keys(Keys.CONTROL + "a", Keys.DELETE)
+        # for Mac Machines like outside Docker use COMMAND
+        # box.send_keys(Keys.COMMAND + "a", Keys.DELETE)
         # the copy step from copy/paste:
         # to allow to have emojis we will copy in memory
         # pyperclip.copy(contact)
@@ -97,8 +119,8 @@ class SendMessage:
         # box.send_keys(Keys.RETURN)
         # box.send_keys(contact, Keys.RETURN)
         box.send_keys(contact, Keys.SHIFT, Keys.RETURN)
-        time.sleep(0)
-        request_logger.info.info(f"End search box: xpath={xpath}")
+        time.sleep(1)
+        request_logger.info(f"End search box: xpath={xpath}")
 
     def get_contact(self, contact: str) -> None:
         """Select the contact found.
@@ -112,5 +134,31 @@ class SendMessage:
         )
         # click on it
         contact_element.click()
+        time.sleep(1)
+        request_logger.info(f"End get_contact: xpath={xpath}")
+
+    def send_message(self) -> None:
+        """Write and send message."""
+        request_logger.info(f"Start send message={self.message}")
+        # find the message box
+        xpath = (
+            "//div"
+            '[@title="Type a message"]'
+            '[@contenteditable="true"]'
+            '[@data-tab="10"]'
+        )
+        request_logger.info(f"message box: xpath={xpath}")
+        message_box = WebDriverWait(self.driver, WAIT_FOR_QR_CODE_SCAN).until(
+            EC.presence_of_element_located((By.XPATH, xpath))
+        )
+        # copy the message in memory
+        # pyperclip does not work at the moment in my docker with Linux
+        # pyperclip.copy(self.message)
+        # paste the message in the box
+        # message_box.send_keys(Keys.SHIFT, Keys.INSERT)
+        message_box.send_keys(self.message, Keys.SHIFT, Keys.INSERT)
         time.sleep(0)
-        request_logger.debug(f"End get_contact: xpath={xpath}")
+        # send the message by pressing enter
+        message_box.send_keys(Keys.ENTER)
+        time.sleep(0)
+        request_logger.debug(f"End send message={self.message}")
