@@ -15,8 +15,8 @@ def main() -> None:
     # print(cli)
     sm = SendMessage()
     sm.set_inputs(
-        contacts=["Meisha Investors Wizard"],
-        message="How has trading been going?",
+        contacts=["Harsh Colleague Vinay"],
+        message="Hello!",
         attachment_image=None,
         attachment_text=None,
     )

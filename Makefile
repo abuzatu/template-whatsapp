@@ -95,10 +95,19 @@ restart:
 	echo "All done"
 
 
-run_whatsapp_send_message:
+run_whatsapp_send_message_1:
 	./bin/dev/docker-exec.sh poetry run dotenv run ipython \
 	bin/run/run_whatsapp_send_message.py \
 	data/input/contacts1.txt \
 	data/input/message1.txt \
+	data/input/attachment_image.png \
+	data/input/attachment_text.txt
+
+
+run_whatsapp_send_message_2:
+	./bin/dev/docker-exec.sh poetry run dotenv run ipython \
+	bin/run/run_whatsapp_send_message.py \
+	data/input/contacts2.txt \
+	data/input/message2.txt \
 	data/input/attachment_image.png \
 	data/input/attachment_text.txt

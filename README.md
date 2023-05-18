@@ -41,9 +41,9 @@ Send whatsapp messages to a list of contacts, with or without attachments.
 ```
 Or with all arguments
 ```
-./bin/dev/docker-exec.sh poetry run dotenv run ipython bin/run/run_whatsapp_send_message.py data/input/contacts1.txt data/input/message1.txt data/input/attachment_image.png data/input/attachment_text.txt
+./bin/dev/docker-exec.sh poetry run dotenv run ipython bin/run/run_whatsapp_send_message.py data/input/contacts2.txt data/input/message2.txt data/input/attachment_image.png data/input/attachment_text.txt
 ```
 Or in short coded with make
 ```
-make run_whatsapp_send_message
+make run_whatsapp_send_message_2
 ```
