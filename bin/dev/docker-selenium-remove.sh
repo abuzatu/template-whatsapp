@@ -1,0 +1,15 @@
+#!/bin/bash
+: "${PROJECT_NAME:=standalone-selenium-chrome}"
+
+CONTAINER_NAME="${PROJECT_NAME}"
+
+if  docker ps | grep "$CONTAINER_NAME$"; then
+    docker stop $CONTAINER_NAME
+    docker rm $CONTAINER_NAME
+elif docker ps -a | grep "$CONTAINER_NAME$"; then
+    docker rm $CONTAINER_NAME
+else
+    echo "Container does not exist"
+fi
+
+# we do not want to remove the image as well, as large

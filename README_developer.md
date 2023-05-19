@@ -14,7 +14,7 @@ cp .env.example .env
 
 ## Poetry
 
-Usually they say you sould use poetry locally to create the first `pyproject.toml` and `poetry.lock`. But to be really safe and do not get any conflicts with local poetry, we first build the Docker withour these files, just by installing poetry, then we ssh into docker and we run these commands. Any file created inside Docker appears also locally. So we have to comment out some lines. 
+Usually they say you should use poetry locally to create the first `pyproject.toml` and `poetry.lock`. But to be really safe and do not get any conflicts with local poetry, we first build the Docker withour these files, just by installing poetry, then we ssh into docker and we run these commands. Any file created inside Docker appears also locally. So we have to comment out some lines. 
 
 In `Dockerfile` comment out
 ```
