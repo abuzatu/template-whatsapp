@@ -41,57 +41,39 @@ lint:
 test:
 	./bin/dev/docker-exec.sh poetry run pytest -s
 
-
-streamlit_calmcode_simulation:
-	./bin/dev/docker-exec.sh ./bin/dev/streamlit-start.sh \
-	src/streamlit/tutorial_calmcode/run_simulation.py
-
-streamlit_calmcode_ML:
-	./bin/dev/docker-exec.sh ./bin/dev/streamlit-start.sh \
-	src/streamlit/tutorial_calmcode/run_ML.py
-
-streamlit_calmcode_pandas:
-	./bin/dev/docker-exec.sh ./bin/dev/streamlit-start.sh \
-	src/streamlit/tutorial_calmcode/run_pandas.py
-
-streamlit_original_01:
-	./bin/dev/docker-exec.sh ./bin/dev/streamlit-start.sh \
-	src/streamlit/tutorial_original/run_bokeh_fastapi_01.py
-
-streamlit_original_02:
-	./bin/dev/docker-exec.sh ./bin/dev/streamlit-start.sh \
-	src/streamlit/tutorial_original/run_bokeh_fastapi_02.py
-
 kill_streamlit:
 	ps aux | grep streamlit | awk '{print $2}' | xargs kill -9
 
 kill_chromium:
-	ps -x| grep usr/lib/chromium/chromium | awk '{print $2}' | xargs kill -9
+	ps -x | grep usr/lib/chromium/chromium | awk '{print $2}' | xargs kill -9
 
 clean_pycache:
 	find . -type d -name "__pycache__" -exec rm -rf {} \;
 
-chromium-stop:
-	./bin/dev/docker-chromium-stop.sh
+selenium-remove:
+	./bin/dev/docker-selenium-remove.sh
 
-chromium-start:
-	./bin/dev/docker-chromium-start.sh
+selenium-stop:
+	./bin/dev/docker-selenium-stop.sh
 
-chromium-ssh:
-	./bin/dev/docker-chromium-ssh.sh
+selenium-start:
+	./bin/dev/docker-selenium-start.sh
 
-restart:
+selenium-ssh:
+	./bin/dev/docker-selenium-ssh.sh
+
+all_restart:
 	echo "Restarting all:"
-	echo "Stopping chromium docker."
-	./bin/dev/docker-chromium-stop.sh
-	echo "Restarting chromium docker."
-	./bin/dev/docker-chromium-start.sh
+	echo "Stopping selenium docker."
+	./bin/dev/docker-selenium-stop.sh
+	echo "Restarting selenium docker."
+	./bin/dev/docker-selenium-start.sh
 	echo "Stopping main docker."
 	./bin/dev/docker-stop.sh
 	echo "Restarting main container."
 	./bin/dev/docker-start.sh
-	echo "Restarting iPython."
-	./bin/dev/ipython-start.sh
+	# echo "Restarting iPython."
+	# ./bin/dev/ipython-start.sh
 	echo "All done"
 
 
