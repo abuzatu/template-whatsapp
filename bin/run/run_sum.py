@@ -20,7 +20,7 @@ class Sum:
         sum = 0.0
         for i in range(self.N):
             sum += utils.sum.my_sum(float(i), 10.0)
-            print(f"i={i}, sum if i and 10 is {sum}")
+            print(f"i={i}, adding sum if i and 10 obtaining {sum}")
 
 
 if __name__ == "__main__":
