@@ -7,7 +7,13 @@ places a trade from them, maybe also uses a FastAPI to record the trades to a ba
 
 Create and start the standalone selenium-chromium container based on an image for Arm architecture (M1).
 ```
-make selenium-start
+make chromium-start
+```
+
+Copy the example of these files and modify if needed.
+```
+cp .bashrc.example .bashrc
+cp .env.example .env
 ```
 
 Build our own docker image. For this we should not use the M1 version.
@@ -29,6 +35,11 @@ make notebook
 And test selenium and whatsapp by pasting the content of `run/bin/run_selenium_hello_world.py`
 
 # Run
+
+Test just that some dummy code runs.
+```
+./bin/dev/docker-exec.sh poetry run dotenv run ipython bin/run/run_sum.py
+```
 
 Or run directly the main script from outside the docker with
 ```
