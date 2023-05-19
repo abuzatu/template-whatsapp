@@ -84,7 +84,7 @@ class CLI:
             request_logger.warning(
                 "You did not provide an image file name "
                 "as the third argument, "
-                "so we will not send an image as an attachement!"
+                "so we will not send an image as an attachment!"
             )
             attachment_image = None
         request_logger.info(f"attachment_file_name={attachment_image}")
@@ -106,15 +106,17 @@ class CLI:
                 with open(input_file_name, "r", encoding="utf8") as f:
                     attachment_message = f.read().rstrip()
         except IndexError:
-            request_logger.error(
-                "Please provide the message file name as the second argument!"
-            )
+            # pass is OK as it means the user does not have to send a description
+            # to the attachement
+            if len(sys_argv) >= 4:
+                request_logger.warning(
+                    "You provided an attachment file to send, "
+                    "but you did not provide an a text description "
+                    "as the fourth argument, "
+                    "so we will send an attached image without a text description!"
+                )
+            else:
+                pass
             return None
         request_logger.info(f"attachment_message={attachment_message}")
         return attachment_message
-
-
-# contacts = utils.get_contacts(sys.argv)
-# message = utils.get_message(sys.argv)
-# attachment_message = utils.get_attachment_message(sys.argv)
-# attachment_file_name = utils.get_attachment_file_name(sys.argv)

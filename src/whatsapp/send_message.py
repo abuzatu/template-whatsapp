@@ -7,7 +7,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
+from selenium.common.exceptions import WebDriverException
 
+from cli.cli_send_message import CLI
 from utils.logger import request_logger
 from whatsapp.web_driver import Driver
 
@@ -24,19 +26,53 @@ class SendMessage:
         """Initialize."""
         self.driver = Driver().fit()
         self.driver.get("https://web.whatsapp.com")
+        request_logger.info("SendMessage.init() is done.")
 
-    def set_inputs(
+    def set_inputs_manually(
         self,
         contacts: List[str],
         message: str,
         attachment_image: Optional[str],
         attachment_text: Optional[str],
     ) -> None:
-        """Set inputs."""
+        """Set inputs manually."""
         self.contacts = contacts
         self.message = message
         self.attachment_image = attachment_image
         self.attachment_text = attachment_text
+
+    def set_inputs_from_cli(
+        self,
+        cli: CLI,
+    ) -> None:
+        """Set inputs manually."""
+        self.contacts = cli.contacts
+        self.message = cli.message
+        self.attachment_image = cli.attachment_image
+        self.attachment_text = cli.attachment_text
+
+    def __str__(self) -> str:
+        """Build a string, to allow to print."""
+        result = (
+            "From CLI retrieved: "
+            f"contacts='{self.contacts}', "
+            f"message='{self.message}', "
+            f"attachment_image='{self.attachment_image}', "
+            f"attachment_text='{self.attachment_text}', "
+        )
+        return result
+
+    def quit_driver(self) -> None:
+        """Quit driver (closes all windows).
+
+        Without this, the next restart will be very slow to create the driver.
+        """
+        try:
+            title = self.driver.title
+            request_logger.info(f"Quitting driver with title={title}")
+            self.driver.quit()
+        except:
+            request_logger.info("Driver is already quitted:")
 
     def fit(self) -> None:
         """Fit. Send the message."""
@@ -54,8 +90,7 @@ class SendMessage:
             request_logger.info("Start send message()")
             time.sleep(3)
 
-        # quit the driver (closes all windows)
-        self.driver.quit()
+        self.quit_driver()
 
     def search_box(self, contact: str) -> None:
         """Search box.

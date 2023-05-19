@@ -90,6 +90,12 @@ run_whatsapp_send_message_2:
 	./bin/dev/docker-exec.sh poetry run dotenv run ipython \
 	bin/run/run_whatsapp_send_message.py \
 	data/input/contacts2.txt \
+	data/input/message2.txt
+
+run_whatsapp_send_message_22:
+	./bin/dev/docker-exec.sh poetry run dotenv run ipython \
+	bin/run/run_whatsapp_send_message.py \
+	data/input/contacts2.txt \
 	data/input/message2.txt \
 	data/input/attachment_image.png \
 	data/input/attachment_text.txt
