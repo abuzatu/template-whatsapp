@@ -356,9 +356,9 @@ The method above did not work for M1. `make build` would fail. If we used `make 
 
 The solution is to use a second second container from the image `seleniarm` for `standalone-chromium`. Note `arm` for the M1 processor. `Chromium` is the open source platform on which `Chrome` is built, also from Google. Basically it is like a `Chrome` browser. We build a container based on this image. The selenium does not offer for M1, but the selenium community fork from it and create for M1 and offer the image. Its [Chromedriver is here](https://chromedriver.chromium.org/downloads). The [https://www.browserstack.com/guide/difference-between-chrome-and-chromium](differences between Chrome and Chromium) explained here.
 
-We start this container (which will also download the image), as explained by [https://github.com/seleniumhq-community/docker-seleniarm](GitHub.com/SeleniumHQ-Community/docker-seleriarm), to which we add `-d` (detached mode, to give us back access to terminal) and create a name of the container by adding `--name standalone-chromium` (to be used later to link it into our `template-whatsapp` container) 
+We start this container (which will also download the image), as explained by [https://github.com/seleniumhq-community/docker-seleniarm](GitHub.com/SeleniumHQ-Community/docker-seleriarm), to which we add `-d` (detached mode, to give us back access to terminal) and create a name of the container by adding `--name standalone-selenium-chrome` (to be used later to link it into our `template-whatsapp` container) 
 ```
-docker run --rm -it -d -p 4444:4444 -p 5900:5900 -p 7900:7900 --name standalone-chromium --shm-size 2g seleniarm/standalone-chromium:latest
+docker run --rm -it -d -p 4444:4444 -p 5900:5900 -p 7900:7900 --name standalone-selenium-chrome --shm-size 2g seleniarm/standalone-chromium:latest
 ```
 The original instruction was this
 ```
@@ -368,7 +368,7 @@ A [https://www.youtube.com/watch?v=rAia60kxth8](Youtube video) that explains the
 
 Then ssh into the container
 ```
-docker exec -i -t standalone-chromium /bin/bash
+docker exec -i -t standalone-selenium-chrome /bin/bash
 ```
 To not have to scan `Whatsapp` at every login, create a folder to remind the `Whatsapp` profile, and we will use this folder in our code when we open the `chromedriver`.
 ```
@@ -376,7 +376,7 @@ mkdir -p /home/seluser/.config/chromium/google-chrome/Whatsapp
 ```
 But you can create also from the outside 
 ```
-docker exec -i -t standalone-chromium mkdir -p /home/seluser/.config/chromium/google-chrome/Whatsapp
+docker exec -i -t standalone-selenium-chrome mkdir -p /home/seluser/.config/chromium/google-chrome/Whatsapp
 ```
 Already at start, it has these processes open, if you check `ps -x` from the Terminal (you can do from Docker Desktop too)
 ```
@@ -401,19 +401,18 @@ $ ps -x
 $ 
 ```
 
-
 To find the IP of this container
 ```
-docker inspect standalone-chromium
+docker inspect standalone-selenium-chrome
 ```
 To look at logs created in docker while building and after
 ```
-docker logs standalone-chromium
+docker logs standalone-selenium-chrome
 ```
 
 We link this second container to our main container `template-whatsapp` in `./bin/dev/docker-start.sh`
 ```
-        --link standalone-chromium \
+        --link standalone-selenium-chrome \
 ```
 
 We can test all the steps with
@@ -455,7 +454,7 @@ chrome_options.add_argument(CHROME_PROFILE_PATH)
 print("test03")
 # Start ChromeDriver
 driver = webdriver.Remote(
-    command_executor="http://standalone-chromium:4444/wd/hub", options=chrome_options
+    command_executor="http://standalone-selenium-chrome:4444/wd/hub", options=chrome_options
 )
 print("test04")
 driver.maximize_window()
@@ -478,6 +477,29 @@ print("test08")
 A hello world to query the first page at google is on [https://stackoverflow.com/questions/59482607/how-can-i-use-selenium-python-to-do-a-google-search-and-then-open-the-results](StackOverflow). It did not work for me as first it asks to accept some cookies, so you can not search Google directly.
 
 Another example here on [https://stackoverflow.com/questions/61805008/using-selenium-standalone-chrome-in-docker-compose-connecting-with-pythons-sele](StackOverflow), including `docker compose` between the container of standalone selenium and the docker with Python.
+
+## For Ubuntu machines like on a VPS server
+
+The same as above, except the Chromium ARM image as above will not work, but we need to use the official selenium Chrome offered by Chrome. Remember that the Chromium ARM image was offered by the community of users. So in the file `./bin/dev/docker-selenium-start.sh` we need these lines to switch between one image or another, as a function of the machine we are on.
+```
+# find on what machine we are, local or on server
+if [ "$(uname -m)" = "arm64" ]; then
+    echo "We are local on MacOS M1"
+    # Chrome does not offer binaries for M1, so we need to use
+    # another image, built by communty seleriarm on chromium,
+    # not chrome, but chromium is a barebones chrome,
+    # on which chrome is built
+    SELENIUM_CROME_IMAGE="seleniarm/standalone-chromium:latest"
+elif [ "$(uname -m)" = "x86_64" ]; then
+    echo "We are on server Ubuntu"
+    # We use the regular image provided by Chrome
+    SELENIUM_CROME_IMAGE="selenium/standalone-chrome:latest"
+else
+    echo "Error: Unsupported architecture $(uname -m), we support arm64 and x86_64."
+    exit 1
+fi
+echo "We will use SELENIUM_CROME_IMAGE=${SELENIUM_CROME_IMAGE}."
+```
 
 ### Monitor the webdriver from the outside 
 

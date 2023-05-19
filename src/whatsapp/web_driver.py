@@ -32,7 +32,7 @@ class Driver:
         request_logger.info("Start to create the web driver.")
         start = time.time()
         self.driver = webdriver.Remote(
-            command_executor="http://standalone-chromium:4444/wd/hub",
+            command_executor="http://standalone-selenium-chrome:4444/wd/hub",
             options=chrome_options,
         )
         end = time.time()

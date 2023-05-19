@@ -26,7 +26,8 @@ print("test03")
 start = time.time()
 # Start ChromeDriver
 driver = webdriver.Remote(
-    command_executor="http://standalone-chromium:4444/wd/hub", options=chrome_options
+    command_executor="http://standalone-selenium-chrome:4444/wd/hub",
+    options=chrome_options,
 )
 end = time.time()
 duration_seconds = end - start
