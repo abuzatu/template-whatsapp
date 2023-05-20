@@ -28,7 +28,7 @@ def main(debug: bool) -> None:
         # set from CLI
         rm.set_inputs_from_cli(cli)
     print(rm)
-    # rm.fit()
+    rm.fit()
     rm.quit_driver()
 
 
