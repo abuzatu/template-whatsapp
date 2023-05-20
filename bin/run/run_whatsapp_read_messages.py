@@ -17,7 +17,7 @@ def main(debug: bool) -> None:
         f"Start __main__ for Whatsapp ReadMessages with sys.argv={sys.argv}"
     )
     cli = CLI(sys.argv)
-    print(cli)
+    # print(cli)
     rm = ReadMessages()
     if debug:
         # set by hand
@@ -27,7 +27,7 @@ def main(debug: bool) -> None:
     else:
         # set from CLI
         rm.set_inputs_from_cli(cli)
-    print(rm)
+    # print(rm)
     rm.fit()
     rm.quit_driver()
 

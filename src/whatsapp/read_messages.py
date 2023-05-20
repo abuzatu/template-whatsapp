@@ -23,7 +23,7 @@ from configs.settings import (
 )
 
 # read last how many messages
-N = 1
+N = 5
 
 
 class ReadMessages:
@@ -33,7 +33,7 @@ class ReadMessages:
         """Initialize."""
         self.driver = Driver().fit()
         self.driver.get("https://web.whatsapp.com")
-        request_logger.info("ReadMessages.init() is done.")
+        request_logger.debug("ReadMessages.init() is done.")
 
     def set_inputs_manually(
         self,
@@ -89,7 +89,7 @@ class ReadMessages:
         # but if I close the loop with control+C, we want the driver to quit cleanly
         # using a try-except
         try:
-            while counter < 1:
+            while counter < 5:
                 # increase the counter of the loop to keep track
                 counter += 1
                 # read the messages for each contact in this loop
@@ -111,21 +111,21 @@ class ReadMessages:
                     # we can show the messages that exist so far
                     for i in range(len(dict_contact_messages[contact])):
                         message = dict_contact_messages[contact][i]
-                        request_logger.info(f"Already message i={i}: {message}")
-                    request_logger.info("Start search_box()")
+                        request_logger.debug(f"Already message i={i}: {message}")
+                    request_logger.debug("Start search_box()")
                     self.search_box(contact)
-                    request_logger.info("Start get_contact()")
+                    request_logger.debug("Start get_contact()")
                     time.sleep(0)
                     self.get_contact(contact)
-                    request_logger.info("Start receive_messages()")
+                    request_logger.debug("Start receive_messages()")
                     time.sleep(1)
                     messages = self.receive_messages(contact, counter, N)
-                    request_logger.info(f"Getting back {len(messages)}:")
+                    request_logger.debug(f"Getting back {len(messages)}:")
                     # loop through the messages and find those that are not yet processed
                     # for now using brute force to compare to all previous messages
                     for i in range(len(messages)):
                         message = messages[i]
-                        request_logger.info(f"Received message i={i}: {message}")
+                        request_logger.debug(f"Received message i={i}: {message}")
                         if message is None or message in dict_contact_messages[contact]:
                             # if message already in the list, do nothing
                             continue
@@ -133,7 +133,7 @@ class ReadMessages:
                         request_logger.info(f"New     message i={i}: {message}")
                         # add to the dictionary of new message
                         dict_contact_messages[contact].append(message)
-                    request_logger.info("End receive_messages()")
+                    request_logger.debug("End receive_messages()")
         except KeyboardInterrupt:
             request_logger.error("Ctrl+C was pressed, execute cleanup actions.")
             self.quit_driver()
@@ -156,27 +156,27 @@ class ReadMessages:
             '[@title="Search input textbox"]'
             '[@data-tab="3"]'
         )
-        request_logger.info(f"Start search box: xpath={xpath}")
+        request_logger.debug(f"Start search box: xpath={xpath}")
         # go to the search box
         box = WebDriverWait(self.driver, WAIT_FOR_SEARCH_BOX).until(
             EC.presence_of_element_located((By.XPATH, xpath))
         )
-        request_logger.info(f"box={box}")
+        request_logger.debug(f"box={box}")
         if box is None:
             box = WebDriverWait(self.driver, WAIT_FOR_QR_CODE_SCAN).until(
                 EC.presence_of_element_located((By.XPATH, xpath))
             )
-            request_logger.info(f"again1 box={box}")
+            request_logger.debug(f"again1 box={box}")
         if box is None:
             box = WebDriverWait(self.driver, WAIT_FOR_QR_CODE_SCAN).until(
                 EC.presence_of_element_located((By.XPATH, xpath))
             )
-            request_logger.info(f"again2 box={box}")
+            request_logger.debug(f"again2 box={box}")
         if box is None:
             box = WebDriverWait(self.driver, WAIT_FOR_QR_CODE_SCAN).until(
                 EC.presence_of_element_located((By.XPATH, xpath))
             )
-            request_logger.info(f"again3 box={box}")
+            request_logger.debug(f"again3 box={box}")
         # clear the box if any previous info
         # needed for the further elements in the for loop
         # box.clear()
@@ -196,14 +196,14 @@ class ReadMessages:
         # try to send directly the text, as we do not have special characters (emoji)
         # and doing copy paste all the time does not allow other work on the computer
         # while this script is running, as it does not allow copy paste on the computer
-        request_logger.info(f"contact={contact}, type={type(contact)}")
+        request_logger.debug(f"contact={contact}, type={type(contact)}")
         # box.send_keys(contact)
         # box.send_keys(Keys.ENTER)
         # box.send_keys(Keys.RETURN)
         # box.send_keys(contact, Keys.RETURN)
         box.send_keys(contact, Keys.SHIFT, Keys.RETURN)
         time.sleep(1)
-        request_logger.info(f"End search box: xpath={xpath}")
+        request_logger.debug(f"End search box: xpath={xpath}")
 
     def get_contact(self, contact: str) -> None:
         """Select the contact found.
@@ -211,43 +211,18 @@ class ReadMessages:
         It is a span with the title of the contact.
         """
         xpath = "//span" f'[@title="{contact}"]'
-        request_logger.info(f"Start get_contact: xpath={xpath}")
+        request_logger.debug(f"Start get_contact: xpath={xpath}")
         contact_element = WebDriverWait(self.driver, WAIT_FOR_QR_CODE_SCAN).until(
             EC.presence_of_element_located((By.XPATH, xpath))
         )
         # click on it
         contact_element.click()
         time.sleep(1)
-        request_logger.info(f"End get_contact: xpath={xpath}")
-
-    def receive_messages_once(self, contact: str) -> None:
-        """Receive messages."""
-        request_logger.info(f"Start receive_messages(contact={contact})")
-        # either of these two xpath below seems to work to return
-        # the latest message in the chat
-        xpath1 = "//div" '[@class="_2gzeB"]' '[@data-testid="conversation-panel-body"]'
-        xpath2 = (
-            "//div"
-            '[@tabindex="-1"]'
-            '[@class="n5hs2j7m oq31bsqd gx1rr48f qh5tioqs"]'
-            '[@data-tab="8"]'
-            '[@role="application"]'
-            '[@aria-label="Message list. Press right arrow key on a message to open message context menu."]'  # noqa
-        )  # noqa
-        request_logger.info(f"Search latest message with xpath={xpath1}")
-        conversation = WebDriverWait(self.driver, WAIT_FOR_QR_CODE_SCAN).until(
-            EC.presence_of_element_located((By.XPATH, xpath1))
-        )
-        # latest message
-        t = conversation.text
-        print(f"type(t)={type(t)}")
-        print(f"len(t)={len(t)}")
-        print(f"t={t}")
-        request_logger.info("End receive_messages()")
+        request_logger.debug(f"End get_contact: xpath={xpath}")
 
     def receive_messages(self, contact: str, counter: int, N: int) -> None:
         """Receive messages."""
-        request_logger.info(
+        request_logger.debug(
             f"Start receive_messages(contact={contact}, counter={counter})"
         )
         # this returns the latest message in a chat
@@ -259,7 +234,7 @@ class ReadMessages:
             '[@role="application"]'
             # '[@aria-label="Message list. Press right arrow key on a message to open message context menu."]'
         )
-        request_logger.info(f"Search for latest conversation: xpath={xpath}")
+        request_logger.debug(f"Search for latest conversation: xpath={xpath}")
         for i in range(1):
             counter_str = str(counter).zfill(3)
             text = ""
@@ -269,32 +244,25 @@ class ReadMessages:
                 EC.presence_of_element_located((By.XPATH, xpath))
             )
             text += f"counter_str={counter_str}\n"
-            request_logger.info(text)
+            request_logger.debug(text)
             # latest message
             t = conversation.text
-            request_logger.info(f"type(t)={type(t)}")
-            request_logger.info(f"len(t)={len(t)}")
-            print(f"t={t}")
-            time.sleep(3)
-            # continue
+            request_logger.debug(f"type(t)={type(t)}, len(t)={len(t)}, t={t}")
+            # time.sleep(3)
             self.driver.save_screenshot(f"screenshot_{counter_str}.png")
-            print()
             element_html = conversation.get_attribute("innerHTML")  # exact HTML content
-            # print("element_html:")
-            # print(element_html)
+            request_logger.debug(f"element_html={element_html}")
             with open(f"source_code_outer_{counter_str}.html", "w") as f:
                 f.write(element_html)
             soup = BeautifulSoup(element_html, "html.parser")
-            print("soup")
-            # print(elementSoup)
-            # print(soup.prettify())
-            # print("div1")
+            request_logger.debug(f"soup={soup}")
+            request_logger.debug(f"soup.prettify()={soup.prettify()}")
+            # div1_all
             # div1=soup.find_all(class_="_1-FMR message-in focusable-list-item")[-1]
-            # div1_all = soup.find_all("div", attrs={"class": re.compile("_1-FMR.*")})
             div1_all = soup.find_all("div", attrs={"class": re.compile("_1-FMR.*")})
-            request_logger.info(f"len(div1_all)={len(div1_all)}")
+            request_logger.debug(f"len(div1_all)={len(div1_all)}")
             messages = self.get_messages(div1_all, contact=contact, N=N)
-            request_logger.info(f"messages={messages}")
+            request_logger.debug(f"messages={messages}")
             return messages
 
     def get_messages(self, div1_all, contact: str, N: int) -> List[Message]:
@@ -302,7 +270,7 @@ class ReadMessages:
 
         Reason we want more is that since last check maybe more messages appear.
         """
-        request_logger.info(
+        request_logger.debug(
             f"Start get the last {N} messages from div1_all, " f"for contact={contact}"
         )
         messages = []
@@ -313,46 +281,42 @@ class ReadMessages:
 
     def get_message(self, div1_all, index: int, contact: str) -> Message:
         """Return a message from one div1."""
-        request_logger.info(f"get_messsage(contact={contact}, index={index})")
+        request_logger.debug(f"get_messsage(contact={contact}, index={index})")
+        # div1
         div1 = div1_all[index]
-        print(type(div1))
-        print("div1.text")
-        print(div1.text)
-        print("div1.prettify")
-        print(div1.prettify())
+        request_logger.debug(f"div1.div={div1.div}")
+        request_logger.debug(f"div1.text={div1.text}")
+        request_logger.debug(f"div1.text={div1.text}")
+        # div2_all
         div2_all = div1.find_all(class_="copyable-text")
-        request_logger.info(f"len(div2_all)={len(div2_all)}")
-        print("div2_all")
-        print(div2_all)
+        request_logger.debug(f"len(div2_all)={len(div2_all)}")
+        request_logger.debug(f"div2_all={div2_all}")
         if len(div2_all) == 0:
             # this can happen if the last message is deleted
-            request_logger.info(
+            request_logger.debug(
                 "len(div2_all)=0, "
                 "it can happen if last message is deleted, "
                 "or if you have been removed from the group, "
                 "so sleep a second and continue"
             )
             return None
+        # div2
         div2 = div2_all[0]
-        print("div2 type")
-        print(type(div2))
-        print("div2 text")
-        print(div2.text)
-        print("div2.prettify")
-        print(div2.prettify())
+        request_logger.debug(f"div2.div={div2.div}")
+        request_logger.debug(f"div2.text={div2.text}")
+        request_logger.debug(f"div2.prettify()={div2.prettify()}")
         # metadata
         metadata = div2["data-pre-plain-text"]
-        print("metadata")
-        print(metadata)
+        request_logger.debug(f"metadata={metadata}")
         # e.g. '[2:56 pm, 28/10/2022] Harsh Colleague Vinay: '
         datetime_str = metadata.split("]")[0].split("[")[-1]
-        request_logger.info(f"datetime_str={datetime_str}")
+        request_logger.debug(f"datetime_str={datetime_str}")
         # e.g. '2:56 pm, 28/10/2022'
         # e.g. 0:24 pm, 10/11/2022 -> this has a problem as 0 must appear as 12
         # for both am and pm, but avoid for 10.
         if datetime_str[0] == "00":
             datetime_str = datetime_str.replace("00:", "12:")
-        request_logger.info(f"datetime_str={datetime_str}")
+        request_logger.debug(f"datetime_str={datetime_str}")
         # https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
         if "am" in datetime_str or "pm" in datetime_str:
             # I has hours from 0 to 12
@@ -360,13 +324,13 @@ class ReadMessages:
         else:
             # H has hours from 0 to 23
             my_format = "%H:%M, %d/%m/%Y"
-        request_logger.info(f"datetime_str={datetime_str}")
+        request_logger.debug(f"datetime_str={datetime_str}")
         # e.g. build datetime object, e.g. Timestamp('2022-10-28 14:56:00')
         datetime = pd.to_datetime(datetime_str, format=my_format)
-        request_logger.info(f"datetime={datetime}")
+        request_logger.debug(f"datetime={datetime}")
         author = metadata.split("]")[1][1:-2]
         # e.g. 'Harsh Colleague Vinay'
-        request_logger.info(f"author={author}")
+        request_logger.debug(f"author={author}")
         text = "\n"
         text += f"datetime={datetime}\n"
         text += f"author={author}\n"
@@ -379,12 +343,13 @@ class ReadMessages:
         # eliminate all the enter and tabs, just put spaces in between
         # to be on one line, easier to read and to analyse
         quoted_message = " ".join(quoted_message.split())
-        print(f"quoted_message={quoted_message}")
+        request_logger.debug(f"quoted_message={quoted_message}")
         text += f"quoted_message={quoted_message}\n"
-        div4_all = div2.find_all(class_="_11JPr selectable-text copyable-text")
-        # div4_all = div2.find_all(
-        #    "div", attrs={"class": re.compile("*selectable-text copyable-tex*")}
-        # )
+        # div4_all = div2.find_all(class_="_11JPr selectable-text copyable-text")
+        # below more generic, as this code _11JPr changes over time
+        div4_all = div2.find_all(
+            class_=lambda c: c and "selectable-text copyable-text" in c
+        )
         if len(div4_all) == 0:
             return None
         div4 = div4_all[0]
@@ -392,9 +357,11 @@ class ReadMessages:
         # eliminate all the enter and tabs, just put spaces in between
         # to be on one line, easier to read and to analyse
         actual_message = " ".join(actual_message.split())
+        request_logger.debug(
+            f"actual_message={actual_message}, time={pd.Timestamp.now()}"
+        )
         text += f"actual_message={actual_message}\n"
-        print(f"actual_message={actual_message}")
-        request_logger.info(f"actual_message={actual_message}, time={pd.Timestamp.now()}")
+        # print(text)
         message = Message(contact, author, datetime, actual_message, quoted_message)
-        request_logger.info(f"message={message}")
+        request_logger.debug(f"message={message}")
         return message
