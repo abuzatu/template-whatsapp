@@ -1,4 +1,4 @@
-"""Module for Order for PipsGainer (the central broadcast)."""
+"""Module to parse one message for PipsGainer (the central broadcast)."""
 
 from typing import List
 
@@ -6,8 +6,11 @@ from trading.order import Order
 from utils.logger import request_logger
 
 
-class Order_PipsGainer(Order):
-    """Order from PipsGainer (the central broadcast)."""
+class Parse_PipsGainer:
+    """Parse a text message from PipsGainer (the central broadcast).
+
+    One text message produces one order.
+    """
 
     def __init__(self) -> None:
         """init."""
@@ -42,7 +45,15 @@ class Order_PipsGainer(Order):
             """,
         ]
 
-    def fit(self, text: str) -> None:
+    def fit_examples(self) -> None:
+        """Fit several texts as examples."""
+        request_logger.info("Will start to fit examples.")
+        for example in self.examples:
+            print()
+            o = self.fit(example)
+            print(o)
+
+    def fit(self, text: str) -> Order:
         """Initialize from a text message with rule-based."""
         if text.rstrip() in [
             "ACTIVATED",
@@ -60,32 +71,35 @@ class Order_PipsGainer(Order):
             request_logger.debug(
                 "Just empty string or only one word, so can not be a trade, we ignore."
             )
+            o = Order()
         elif len(words) > 12 and words[12] == "www.PipsGainer.com":
-            self.set_call(words)
+            o = self.set_call(words)
         else:
             request_logger.debug("Regular message, will ignore.")
-            pass
+            o = Order()
+        return o
 
-    def set_call(self, words: List[str]) -> None:
+    def set_call(self, words: List[str]) -> Order:
         """Fill values for CALL:, usually to open an order."""
-        self.segment = words[1][0:-1]
-        self.action = "open"
-        self.direction = words[2].lower()
-        if self.direction not in ["buy", "sell"]:
-            request_logger.warning(f"direction={self.direction} should be buy or sell!")
+        o = Order()
+        o.segment = words[1][0:-1]
+        o.action = "open"
+        o.direction = words[2].lower()
+        if o.direction not in ["buy", "sell"]:
+            request_logger.warning(f"direction={o.direction} should be buy or sell!")
         if words[3] in ["LIMIT", "STOP"]:
-            self.type = "entry"
+            o.type = "entry"
         else:
             request_logger.warning(f"type={words[3]} not known, expect LIMIT, STOP.")
-        self.symbol = words[4]
-        if self.symbol == "WTI":
-            self.symbol = "USOilSpot"
-        elif self.symbol == "GOLD":
-            self.symbol = "XAUUSD"
-        self.EPs = [float(words[5])]  # entry price
-        self.TPs.append(float(words[7]))
-        self.SL = float(words[9])
-        self.CMP = float(words[11])  # current market price
+        o.symbol = words[4]
+        if o.symbol == "WTI":
+            o.symbol = "USOilSpot"
+        elif o.symbol == "GOLD":
+            o.symbol = "XAUUSD"
+        o.EPs = [float(words[5])]  # entry price
+        o.TPs.append(float(words[7]))
+        o.SL = float(words[9])
+        o.CMP = float(words[11])  # current market price
         if words[12] != "www.PipsGainer.com":
             request_logger.warning(
                 "Problem in format, as www.PipsGainer.com is not position 12!"
@@ -94,18 +108,21 @@ class Order_PipsGainer(Order):
         if len(words) > 13:
             request_logger.info("This is an update")
             pass
+        return o
 
-    def set_update(self, words: List[str]) -> None:
+    def set_update(self, words: List[str]) -> Order:
         """Fill values for UPDATE:, usually to close an order if not closed already.
 
         Not used for now.
         """
         print(words)
+        o = Order()
         # find position of pipsgainer
         if "BOOKED" in words:
             # we will close the trade at market value
-            self.action = "close"
-            self.type = "market"
-            self.symbol = words[2]
+            o.action = "close"
+            o.type = "market"
+            o.symbol = words[2]
         else:
             request_logger.warning("For UPDATE there that is not to close not coded.")
+        return o
