@@ -118,7 +118,7 @@ run_whatsapp_read_messages_3:
 	data/input/contacts3.txt
 
 send:
-	make run_whatsapp_send_message_2
+	make run_whatsapp_send_message_22
 
 read:
 	make run_whatsapp_read_messages_3
