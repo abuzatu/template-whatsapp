@@ -13,7 +13,7 @@ DEBUG = False
 def main(debug: bool) -> None:
     """Run the main function."""
     request_logger.info(
-        f"Start __main__ for Whatsapp SendMessagenwith sys.argv={sys.argv}"
+        f"Start __main__ for Whatsapp SendMessage with sys.argv={sys.argv}"
     )
     cli = CLI(sys.argv)
     print(cli)

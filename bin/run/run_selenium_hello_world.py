@@ -50,7 +50,7 @@ time.sleep(5)
 
 driver.get("https://web.whatsapp.com")
 print("test07")
-time.sleep(30)
+time.sleep(45)
 
 driver.quit()
 print("Quitting driver.")

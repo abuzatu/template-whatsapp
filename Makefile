@@ -45,7 +45,7 @@ kill_streamlit:
 	ps aux | grep streamlit | awk '{print $2}' | xargs kill -9
 
 kill_chromium:
-	ps -x | grep usr/lib/chromium/chromium | awk '{print $2}' | xargs kill -9
+	ps -x| grep usr/lib/chromium/chromium | awk '{print $2}' | xargs kill -9
 
 clean_pycache:
 	find . -type d -name "__pycache__" -exec rm -rf {} \;
@@ -59,10 +59,13 @@ selenium-stop:
 selenium-start:
 	./bin/dev/docker-selenium-start.sh
 
+selenium-backup:
+	./bin/dev/docker-selenium-backup.sh
+
 selenium-ssh:
 	./bin/dev/docker-selenium-ssh.sh
 
-all_restart:
+restart:
 	echo "Restarting all:"
 	echo "Stopping and restarting selenium docker."
 	./bin/dev/docker-selenium-stop.sh
@@ -109,6 +112,13 @@ run_whatsapp_send_message_22:
 	data/input/attachment_image.png \
 	data/input/attachment_text.txt
 
+run_whatsapp_read_messages_3:
+	./bin/dev/docker-exec.sh poetry run dotenv run ipython \
+	bin/run/run_whatsapp_read_messages.py \
+	data/input/contacts3.txt
+
 send:
 	make run_whatsapp_send_message_2
 
+read:
+	make run_whatsapp_read_messages_3

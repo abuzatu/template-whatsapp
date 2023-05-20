@@ -26,9 +26,10 @@ echo "We will use WHATSAPP_PROFILE_PATH=${WHATSAPP_PROFILE_PATH}."
 echo "We will use Whatsapp folder F=${F}."
 
 if  docker ps -a | grep "$CONTAINER_NAME$"; then
-    # stop the container
-    docker stop ${CONTAINER_NAME}
-    # stop will also remove it, so no need to have a line to remove
+    # first remove the local Whatsapp folder
+    rm -rf ${F}
+    # then copy the Whatsapp profile from the container to the local folder
+    docker cp ${CONTAINER_NAME}:${WHATSAPP_PROFILE_PATH}/${F} .
 else
     echo "Container not running."
 fi

@@ -1,4 +1,4 @@
-"""CLI for when we want to send messages."""
+"""CLI for when we want to send one message."""
 
 from typing import List, Optional
 from utils.logger import request_logger
