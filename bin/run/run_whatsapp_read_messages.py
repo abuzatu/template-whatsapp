@@ -6,7 +6,7 @@ from utils.logger import request_logger
 
 from cli.cli_read_messages import CLI
 
-# from whatsapp.send_message import SendMessage
+from whatsapp.read_messages import ReadMessages
 
 DEBUG = False
 
@@ -18,6 +18,18 @@ def main(debug: bool) -> None:
     )
     cli = CLI(sys.argv)
     print(cli)
+    rm = ReadMessages()
+    if debug:
+        # set by hand
+        rm.set_inputs_manually(
+            contacts=["Harsh Colleague Vinay"],
+        )
+    else:
+        # set from CLI
+        rm.set_inputs_from_cli(cli)
+    print(rm)
+    # rm.fit()
+    rm.quit_driver()
 
 
 if __name__ == "__main__":

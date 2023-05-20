@@ -45,7 +45,7 @@ class SendMessage:
         self,
         cli: CLI,
     ) -> None:
-        """Set inputs manually."""
+        """Set inputs from cli."""
         self.contacts = cli.contacts
         self.message = cli.message
         self.attachment_image = cli.attachment_image
