@@ -10,6 +10,7 @@ class Parse_PipsGainer:
     """Parse a text message from PipsGainer (the central broadcast).
 
     One text message produces one order.
+    .fit() returns Order.
     """
 
     def __init__(self) -> None:
@@ -54,7 +55,7 @@ class Parse_PipsGainer:
             print(o)
 
     def fit(self, text: str) -> Order:
-        """Initialize from a text message with rule-based."""
+        """Parse a text message with rule-based."""
         if text.rstrip() in [
             "ACTIVATED",
             "TP HIT",

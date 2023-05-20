@@ -1,4 +1,4 @@
-"""Module for Order for ParamountInfoTech (Akib)."""
+"""Module to parse one text message from ParamountInfoTech (Akib)."""
 
 from typing import List
 
@@ -6,8 +6,12 @@ from trading.order import Order
 from utils.logger import request_logger
 
 
-class Order_ParamountInfoTech(Order):
-    """Order from ParamountInfoTech (Akib)."""
+class Parse_ParamountInfoTech(Order):
+    """Parse one text message from ParamountInfoTech (Akib).
+
+    One text message can produce one or several orders.
+    .fit() returns List[Order].
+    """
 
     def __init__(self) -> None:
         """init."""
@@ -299,3 +303,74 @@ class Order_ParamountInfoTech(Order):
             + self.examples_close
             + self.examples_announcement
         )
+
+    def fit_examples(self) -> None:
+        """Fit several texts as examples."""
+        request_logger.info("Will start to fit examples.")
+        for example in self.examples:
+            print()
+            orders = self.fit(example)
+            for o in orders:
+                print(o)
+
+    def fit(self, text: str) -> List[Order]:
+        """Parse a text message with rule-based to build a list of Order.
+
+        Place all in capital letters, as there is not consistent approach.
+
+        Sometimes there are two lines for the same order, split by \n.
+        And also there are several orders in the same text message, also separted by \n.
+        That means that two of \n separate texts for one order.
+        We split by that and then create a function that parses for one order.
+        """
+        text = text.upper()
+        print("initial text")
+        print(text)
+
+        orders = []
+        for text_one in text.split("\n\n"):
+            # this is the text used for one order
+            # sometimes even this text is split on different lines
+            # so we eliminate those
+            # text_one = text_one.replace("\n", " ").replace("\t", " ")
+            text_one = " ".join(text_one.split())
+            print("new text")
+            print(text_one)
+            o = self.build_one_order(text_one)
+            orders.append(o)
+        return orders
+
+    def build_one_order(self, text: str) -> Order:
+        """Parse one text to build one Order."""
+        o = Order()
+        o.text = text
+        if "BUY" in text or "SELL" in text:
+            o = self.parse_for_order_open(o, text)
+        elif (
+            "MODIFY TARGET" in text
+            or "SET TARGET" in text
+            or "MODIFY STOP" in text
+            or "SET STOP" in text
+        ):
+            o = self.parse_for_order_modify(o, text)
+        elif "BOOK PROFIT" in text or "CLOSE" in text:
+            o = self.parse_for_order_close(o, text)
+        else:
+            o = self.parse_for_order_announcement(o, text)
+        return o
+
+    def parse_for_order_open(self, o: Order, text: str) -> Order:
+        """Parse for order open."""
+        return o
+
+    def parse_for_order_modify(self, o: Order, text: str) -> Order:
+        """Parse for order modify."""
+        return o
+
+    def parse_for_order_close(self, o: Order, text: str) -> Order:
+        """Parse for order close."""
+        return o
+
+    def parse_for_order_announcement(self, o: Order, text: str) -> Order:
+        """Parse for order announcement."""
+        return o

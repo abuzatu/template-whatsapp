@@ -10,6 +10,7 @@ class Parse_InvestorsWizard:
     """Parse a text message from InvestorsWizard (Meisha).
 
     One text message produces one order.
+    .fit() returns Order.
     """
 
     def __init__(self) -> None:
@@ -55,7 +56,7 @@ class Parse_InvestorsWizard:
             print(o)
 
     def fit(self, text: str) -> None:
-        """Initialize from a text message with rule-based."""
+        """Parse a text message with rule-based."""
         text = self.upper(text)
         text = self.deal_with_slash(text)
         text = self.deal_with_traders_delight(text)

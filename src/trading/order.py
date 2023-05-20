@@ -28,20 +28,21 @@ class Order:
         # a list of two values if a range is given for market range
         self.SL: Optional[float] = None  # stop loss (SL)
         self.TPs: List[float] = []  # list of target prices (TPs) if several are given
-        self.examples: List[str] = []  # list of examples
+        self.text: Optional[str] = None  # the text from which the order was produced
 
     def __str__(self) -> str:
         """String representation."""
         return (
-            f"segment={self.segment}, "
             f"action={self.action}, "
             f"type={self.type}, "
             f"direction={self.direction}, "
             f"symbol={self.symbol}, "
+            f"segment={self.segment}, "
             f"CMP={self.CMP}, "
             f"EPs={self.EPs}, "
             f"SL={self.SL}, "
             f"TPs={self.TPs}, "
+            f'text="{self.text}". '
         )
 
     def print(self) -> None:
