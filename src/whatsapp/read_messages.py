@@ -11,7 +11,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import WebDriverException
 
 from cli.cli_send_message import CLI
 from utils.logger import request_logger
@@ -119,7 +118,7 @@ class ReadMessages:
                     time.sleep(0)
                     self.get_contact(contact)
                     request_logger.debug("Start receive_messages()")
-                    time.sleep(1)
+                    time.sleep(0)
                     messages = self.receive_messages(contact, counter, N)
                     request_logger.debug(f"Getting back {len(messages)}:")
                     # loop through the messages and find those that are not yet processed
@@ -136,8 +135,7 @@ class ReadMessages:
                         dict_contact_messages[contact].append(message)
                     request_logger.debug("End receive_messages()")
         except KeyboardInterrupt:
-            request_logger.error("Ctrl+C was pressed, execute cleanup actions.")
-            self.quit_driver()
+            request_logger.error("Ctrl+C was pressed, so stopping.")
         finally:
             self.quit_driver()
 

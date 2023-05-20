@@ -76,21 +76,27 @@ class SendMessage:
 
     def fit(self) -> None:
         """Fit. Send the message."""
-        for contact in self.contacts:
-            request_logger.info(f"Process contact={contact}")
-            request_logger.info("Start search_box()")
-            time.sleep(3)
-            self.search_box(contact)
-            request_logger.info("Start get_contact()")
-            time.sleep(3)
-            self.get_contact(contact)
-            request_logger.info("Start send message()")
-            time.sleep(3)
-            self.send_message()
-            request_logger.info("Start send message()")
-            time.sleep(3)
-
-        self.quit_driver()
+        # if I close the loop with control+C, we want the driver to quit cleanly
+        # using a try-except
+        try:
+            for contact in self.contacts:
+                request_logger.info(f"Process contact={contact}")
+                request_logger.info("Start search_box()")
+                time.sleep(0)
+                self.search_box(contact)
+                request_logger.info("Start get_contact()")
+                time.sleep(0)
+                self.get_contact(contact)
+                request_logger.info("Start send message()")
+                time.sleep(0)
+                self.send_message()
+                request_logger.info("Start send attachment()")
+                self.send_attachment()
+                time.sleep(5)
+        except KeyboardInterrupt:
+            request_logger.error("Ctrl+C was pressed, so stopping.")
+        finally:
+            self.quit_driver()
 
     def search_box(self, contact: str) -> None:
         """Search box.
@@ -154,7 +160,7 @@ class SendMessage:
         # box.send_keys(Keys.RETURN)
         # box.send_keys(contact, Keys.RETURN)
         box.send_keys(contact, Keys.SHIFT, Keys.RETURN)
-        time.sleep(1)
+        time.sleep(0)
         request_logger.info(f"End search box: xpath={xpath}")
 
     def get_contact(self, contact: str) -> None:
@@ -169,7 +175,7 @@ class SendMessage:
         )
         # click on it
         contact_element.click()
-        time.sleep(1)
+        time.sleep(0)
         request_logger.info(f"End get_contact: xpath={xpath}")
 
     def send_message(self) -> None:
@@ -197,3 +203,57 @@ class SendMessage:
         message_box.send_keys(Keys.ENTER)
         time.sleep(0)
         request_logger.debug(f"End send message={self.message}")
+
+    def send_attachment(self) -> None:
+        """Attach and send a file, with no caption for it.
+
+        It can be an image, but also something else.
+        """
+        if self.attachment_image is None:
+            request_logger.info("No attachment to attach, so doing nothing!")
+            return
+        request_logger.debug(f"Start send attachment from {self.attachment_image}")
+        # find attachment box
+        xpath = "//div" '[@title="Attach"]'
+        request_logger.debug(f"attachment box: xpath={xpath}")
+        # attachment_box = self.driver.find_element(By.XPATH, xpath)
+        attachment_box = WebDriverWait(self.driver, WAIT_FOR_QR_CODE_SCAN).until(
+            EC.presence_of_element_located((By.XPATH, xpath))
+        )
+        attachment_box.click()
+        time.sleep(0)
+        # assume the attachment is an image and click on image/movie botton
+        xpath = "//input" '[@accept="image/*,video/mp4,video/3gpp,video/quicktime"]'
+        request_logger.debug(f"image box: xpath={xpath}")
+        image_box = WebDriverWait(self.driver, WAIT_FOR_QR_CODE_SCAN).until(
+            EC.presence_of_element_located((By.XPATH, xpath))
+        )
+        # send the full path of the file to image box
+        image_box.send_keys(self.attachment_image)
+        time.sleep(0)
+        # add a text message with the attachment
+        xpath = (
+            "//div"
+            '[@data-testid="media-caption-input-container"]'
+            # '[@class="copyable-text selectable-text"]'
+        )
+        request_logger.debug(f"attachment message box: xpath={xpath}")
+        attachment_message_box = WebDriverWait(self.driver, WAIT_FOR_QR_CODE_SCAN).until(
+            EC.presence_of_element_located((By.XPATH, xpath))
+        )
+        # copy the attachment_message in memory
+        # pyperclip does not work at the moment in my docker with Linux
+        # pyperclip.copy(self.attachment_message)
+        # paste the message in the box
+        # attachment_message_box.send_keys(Keys.SHIFT, Keys.INSERT)
+        attachment_message_box.send_keys(self.attachment_text, Keys.SHIFT, Keys.INSERT)
+        time.sleep(0)
+        # send the attachment
+        xpath = "//span" '[@data-icon="send"]'
+        request_logger.debug(f"send botton: xpath={xpath}")
+        send_botton = WebDriverWait(self.driver, WAIT_FOR_QR_CODE_SCAN).until(
+            EC.presence_of_element_located((By.XPATH, xpath))
+        )
+        send_botton.click()
+        time.sleep(0)
+        request_logger.debug(f"End send attachment from {self.attachment_image}")
