@@ -1,6 +1,7 @@
 """Read latest messages in a loop."""
 
 from bs4 import BeautifulSoup
+from bs4.element import Tag
 import pandas as pd
 import re
 import time
@@ -235,37 +236,36 @@ class ReadMessages:
             # '[@aria-label="Message list. Press right arrow key on a message to open message context menu."]' # noqa
         )
         request_logger.debug(f"Search for latest conversation: xpath={xpath}")
-        for i in range(1):
-            counter_str = str(counter).zfill(3)
-            text = ""
-            text += "\n\n\n"
-            text += f"******** Start {counter_str}, {pd.Timestamp.now()}, {contact} ********\n"  # noqa
-            conversation = WebDriverWait(self.driver, WAIT_FOR_QR_CODE_SCAN).until(
-                EC.presence_of_element_located((By.XPATH, xpath))
-            )
-            text += f"counter_str={counter_str}\n"
-            request_logger.debug(text)
-            # latest message
-            t = conversation.text
-            request_logger.debug(f"type(t)={type(t)}, len(t)={len(t)}, t={t}")
-            # time.sleep(3)
-            self.driver.save_screenshot(f"screenshot_{counter_str}.png")
-            element_html = conversation.get_attribute("innerHTML")  # exact HTML content
-            request_logger.debug(f"element_html={element_html}")
-            with open(f"source_code_outer_{counter_str}.html", "w") as f:
-                f.write(element_html)
-            soup = BeautifulSoup(element_html, "html.parser")
-            request_logger.debug(f"soup={soup}")
-            request_logger.debug(f"soup.prettify()={soup.prettify()}")
-            # div1_all
-            # div1=soup.find_all(class_="_1-FMR message-in focusable-list-item")[-1]
-            div1_all = soup.find_all("div", attrs={"class": re.compile("_1-FMR.*")})
-            request_logger.debug(f"len(div1_all)={len(div1_all)}")
-            messages = self.get_messages(div1_all, contact=contact, N=N)
-            request_logger.debug(f"messages={messages}")
-            return messages
+        counter_str = str(counter).zfill(3)
+        text = ""
+        text += "\n\n\n"
+        text += f"******** Start {counter_str}, {pd.Timestamp.now()}, {contact} ********\n"  # noqa
+        conversation = WebDriverWait(self.driver, WAIT_FOR_QR_CODE_SCAN).until(
+            EC.presence_of_element_located((By.XPATH, xpath))
+        )
+        text += f"counter_str={counter_str}\n"
+        request_logger.debug(text)
+        # latest message
+        t = conversation.text
+        request_logger.debug(f"type(t)={type(t)}, len(t)={len(t)}, t={t}")
+        # time.sleep(3)
+        self.driver.save_screenshot(f"screenshot_{counter_str}.png")
+        element_html = conversation.get_attribute("innerHTML")  # exact HTML content
+        request_logger.debug(f"element_html={element_html}")
+        with open(f"source_code_outer_{counter_str}.html", "w") as f:
+            f.write(element_html)
+        soup = BeautifulSoup(element_html, "html.parser")
+        request_logger.debug(f"soup={soup}")
+        request_logger.debug(f"soup.prettify()={soup.prettify()}")
+        # div1_all
+        # div1=soup.find_all(class_="_1-FMR message-in focusable-list-item")[-1]
+        div1_all = soup.find_all("div", attrs={"class": re.compile("_1-FMR.*")})
+        request_logger.debug(f"len(div1_all)={len(div1_all)}")
+        messages = self.get_messages(div1_all, contact=contact, N=N)
+        request_logger.debug(f"messages={messages}")
+        return messages
 
-    def get_messages(self, div1_all, contact: str, N: int) -> List[Message]:
+    def get_messages(self, div1_all: Tag, contact: str, N: int) -> List[Message]:
         """Return a list of the N last messages from div1.
 
         Reason we want more is that since last check maybe more messages appear.
@@ -279,7 +279,7 @@ class ReadMessages:
             messages.append(self.get_message(div1_all, index=-i, contact=contact))
         return messages
 
-    def get_message(self, div1_all, index: int, contact: str) -> Message:
+    def get_message(self, div1_all: Tag, index: int, contact: str) -> Message:
         """Return a message from one div1."""
         request_logger.debug(f"get_messsage(contact={contact}, index={index})")
         # div1
