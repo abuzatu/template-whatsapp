@@ -64,8 +64,10 @@ selenium-ssh:
 
 all_restart:
 	echo "Restarting all:"
-	echo "Stopping selenium docker."
+	echo "Stopping and restarting selenium docker."
 	./bin/dev/docker-selenium-stop.sh
+	echo "Wait 5 seconds to give time to the docker to be removed"
+	sleep 5
 	echo "Restarting selenium docker."
 	./bin/dev/docker-selenium-start.sh
 	echo "Stopping main docker."
@@ -76,6 +78,13 @@ all_restart:
 	# ./bin/dev/ipython-start.sh
 	echo "All done"
 
+sum:
+	./bin/dev/docker-exec.sh poetry run dotenv run ipython \
+	bin/run/run_sum.py
+
+hello:
+	./bin/dev/docker-exec.sh poetry run dotenv run ipython \
+	bin/run/run_selenium_hello_world.py
 
 run_whatsapp_send_message_1:
 	./bin/dev/docker-exec.sh poetry run dotenv run ipython \
@@ -99,3 +108,7 @@ run_whatsapp_send_message_22:
 	data/input/message2.txt \
 	data/input/attachment_image.png \
 	data/input/attachment_text.txt
+
+send:
+	make run_whatsapp_send_message_2
+
