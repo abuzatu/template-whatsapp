@@ -71,7 +71,7 @@ class SendMessage:
             title = self.driver.title
             request_logger.info(f"Quitting driver with title={title}")
             self.driver.quit()
-        except:
+        except:  # noqa
             request_logger.info("Driver is already quitted:")
 
     def fit(self) -> None:
