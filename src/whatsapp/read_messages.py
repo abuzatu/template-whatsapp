@@ -1,6 +1,8 @@
 """Read latest messages in a loop."""
 
+from bs4 import BeautifulSoup
 import pandas as pd
+import re
 import time
 from typing import Dict, List
 
@@ -12,12 +14,16 @@ from selenium.common.exceptions import WebDriverException
 
 from cli.cli_send_message import CLI
 from utils.logger import request_logger
+from whatsapp.message import Message
 from whatsapp.web_driver import Driver
 
 from configs.settings import (
     WAIT_FOR_SEARCH_BOX,
     WAIT_FOR_QR_CODE_SCAN,
 )
+
+# read last how many messages
+N = 1
 
 
 class ReadMessages:
@@ -83,7 +89,7 @@ class ReadMessages:
         # but if I close the loop with control+C, we want the driver to quit cleanly
         # using a try-except
         try:
-            while True:
+            while counter < 1:
                 # increase the counter of the loop to keep track
                 counter += 1
                 # read the messages for each contact in this loop
@@ -113,12 +119,26 @@ class ReadMessages:
                     self.get_contact(contact)
                     request_logger.info("Start receive_messages()")
                     time.sleep(1)
+                    messages = self.receive_messages(contact, counter, N)
+                    request_logger.info(f"Getting back {len(messages)}:")
+                    # loop through the messages and find those that are not yet processed
+                    # for now using brute force to compare to all previous messages
+                    for i in range(len(messages)):
+                        message = messages[i]
+                        request_logger.info(f"Received message i={i}: {message}")
+                        if message is None or message in dict_contact_messages[contact]:
+                            # if message already in the list, do nothing
+                            continue
+                        # if here, the message is not in the list, so we process it
+                        request_logger.info(f"New     message i={i}: {message}")
+                        # add to the dictionary of new message
+                        dict_contact_messages[contact].append(message)
                     request_logger.info("End receive_messages()")
         except KeyboardInterrupt:
             request_logger.error("Ctrl+C was pressed, execute cleanup actions.")
             self.quit_driver()
-
-dfdfd
+        finally:
+            self.quit_driver()
 
     def search_box(self, contact: str) -> None:
         """Search box.
@@ -224,3 +244,157 @@ dfdfd
         print(f"len(t)={len(t)}")
         print(f"t={t}")
         request_logger.info("End receive_messages()")
+
+    def receive_messages(self, contact: str, counter: int, N: int) -> None:
+        """Receive messages."""
+        request_logger.info(
+            f"Start receive_messages(contact={contact}, counter={counter})"
+        )
+        # this returns the latest message in a chat
+        xpath = (
+            "//div"
+            '[@tabindex="-1"]'
+            '[@class="n5hs2j7m oq31bsqd gx1rr48f qh5tioqs"]'
+            '[@data-tab="8"]'
+            '[@role="application"]'
+            # '[@aria-label="Message list. Press right arrow key on a message to open message context menu."]'
+        )
+        request_logger.info(f"Search for latest conversation: xpath={xpath}")
+        for i in range(1):
+            counter_str = str(counter).zfill(3)
+            text = ""
+            text += "\n\n\n"
+            text += f"******** Start {counter_str}, {pd.Timestamp.now()}, {contact} ********\n"
+            conversation = WebDriverWait(self.driver, WAIT_FOR_QR_CODE_SCAN).until(
+                EC.presence_of_element_located((By.XPATH, xpath))
+            )
+            text += f"counter_str={counter_str}\n"
+            request_logger.info(text)
+            # latest message
+            t = conversation.text
+            request_logger.info(f"type(t)={type(t)}")
+            request_logger.info(f"len(t)={len(t)}")
+            print(f"t={t}")
+            time.sleep(3)
+            # continue
+            self.driver.save_screenshot(f"screenshot_{counter_str}.png")
+            print()
+            element_html = conversation.get_attribute("innerHTML")  # exact HTML content
+            # print("element_html:")
+            # print(element_html)
+            with open(f"source_code_outer_{counter_str}.html", "w") as f:
+                f.write(element_html)
+            soup = BeautifulSoup(element_html, "html.parser")
+            print("soup")
+            # print(elementSoup)
+            # print(soup.prettify())
+            # print("div1")
+            # div1=soup.find_all(class_="_1-FMR message-in focusable-list-item")[-1]
+            # div1_all = soup.find_all("div", attrs={"class": re.compile("_1-FMR.*")})
+            div1_all = soup.find_all("div", attrs={"class": re.compile("_1-FMR.*")})
+            request_logger.info(f"len(div1_all)={len(div1_all)}")
+            messages = self.get_messages(div1_all, contact=contact, N=N)
+            request_logger.info(f"messages={messages}")
+            return messages
+
+    def get_messages(self, div1_all, contact: str, N: int) -> List[Message]:
+        """Return a list of the N last messages from div1.
+
+        Reason we want more is that since last check maybe more messages appear.
+        """
+        request_logger.info(
+            f"Start get the last {N} messages from div1_all, " f"for contact={contact}"
+        )
+        messages = []
+        N = min(N, len(div1_all))
+        for i in range(1, N + 1):
+            messages.append(self.get_message(div1_all, index=-i, contact=contact))
+        return messages
+
+    def get_message(self, div1_all, index: int, contact: str) -> Message:
+        """Return a message from one div1."""
+        request_logger.info(f"get_messsage(contact={contact}, index={index})")
+        div1 = div1_all[index]
+        print(type(div1))
+        print("div1.text")
+        print(div1.text)
+        print("div1.prettify")
+        print(div1.prettify())
+        div2_all = div1.find_all(class_="copyable-text")
+        request_logger.info(f"len(div2_all)={len(div2_all)}")
+        print("div2_all")
+        print(div2_all)
+        if len(div2_all) == 0:
+            # this can happen if the last message is deleted
+            request_logger.info(
+                "len(div2_all)=0, "
+                "it can happen if last message is deleted, "
+                "or if you have been removed from the group, "
+                "so sleep a second and continue"
+            )
+            return None
+        div2 = div2_all[0]
+        print("div2 type")
+        print(type(div2))
+        print("div2 text")
+        print(div2.text)
+        print("div2.prettify")
+        print(div2.prettify())
+        # metadata
+        metadata = div2["data-pre-plain-text"]
+        print("metadata")
+        print(metadata)
+        # e.g. '[2:56 pm, 28/10/2022] Harsh Colleague Vinay: '
+        datetime_str = metadata.split("]")[0].split("[")[-1]
+        request_logger.info(f"datetime_str={datetime_str}")
+        # e.g. '2:56 pm, 28/10/2022'
+        # e.g. 0:24 pm, 10/11/2022 -> this has a problem as 0 must appear as 12
+        # for both am and pm, but avoid for 10.
+        if datetime_str[0] == "00":
+            datetime_str = datetime_str.replace("00:", "12:")
+        request_logger.info(f"datetime_str={datetime_str}")
+        # https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
+        if "am" in datetime_str or "pm" in datetime_str:
+            # I has hours from 0 to 12
+            my_format = "%I:%M %p, %d/%m/%Y"
+        else:
+            # H has hours from 0 to 23
+            my_format = "%H:%M, %d/%m/%Y"
+        request_logger.info(f"datetime_str={datetime_str}")
+        # e.g. build datetime object, e.g. Timestamp('2022-10-28 14:56:00')
+        datetime = pd.to_datetime(datetime_str, format=my_format)
+        request_logger.info(f"datetime={datetime}")
+        author = metadata.split("]")[1][1:-2]
+        # e.g. 'Harsh Colleague Vinay'
+        request_logger.info(f"author={author}")
+        text = "\n"
+        text += f"datetime={datetime}\n"
+        text += f"author={author}\n"
+        div3 = div2.find_all(class_="quoted-mention _11JPr")
+        if len(div3) == 0:
+            quoted_message = ""
+        else:
+            # .rstrip() to eliminate also all spaces from the end
+            quoted_message = div3[0].text.rstrip()
+        # eliminate all the enter and tabs, just put spaces in between
+        # to be on one line, easier to read and to analyse
+        quoted_message = " ".join(quoted_message.split())
+        print(f"quoted_message={quoted_message}")
+        text += f"quoted_message={quoted_message}\n"
+        div4_all = div2.find_all(class_="_11JPr selectable-text copyable-text")
+        # div4_all = div2.find_all(
+        #    "div", attrs={"class": re.compile("*selectable-text copyable-tex*")}
+        # )
+        if len(div4_all) == 0:
+            return None
+        div4 = div4_all[0]
+        actual_message = div4.text
+        # eliminate all the enter and tabs, just put spaces in between
+        # to be on one line, easier to read and to analyse
+        actual_message = " ".join(actual_message.split())
+        text += f"actual_message={actual_message}\n"
+        print(f"actual_message={actual_message}")
+        request_logger.info(f"actual_message={actual_message}, time={pd.Timestamp.now()}")
+        message = Message(contact, author, datetime, actual_message, quoted_message)
+        request_logger.info(f"message={message}")
+        return message
