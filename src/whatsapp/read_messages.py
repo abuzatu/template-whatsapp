@@ -24,6 +24,11 @@ from configs.settings import (
 
 # read last how many messages
 N = 5
+# skip the first 2 rounds as you start, as it refers to previous messages
+NUM_FIRST_COUNTERS_TO_SKIP = 2
+
+SAVE_SCREENSHOT = False
+SAVE_HTML = False
 
 
 class ReadMessages:
@@ -89,7 +94,7 @@ class ReadMessages:
         # but if I close the loop with control+C, we want the driver to quit cleanly
         # using a try-except
         try:
-            while counter < 5:
+            while True:
                 # increase the counter of the loop to keep track
                 counter += 1
                 # read the messages for each contact in this loop
@@ -101,9 +106,10 @@ class ReadMessages:
                     # we can choose to print a . for each loop, to let us know
                     # how fast the loops are progressing
                     if counter % 1 == 0:
-                        print(".")
+                        pass
+                        # print(".")
                     if counter % 1 == 0:
-                        request_logger.debug(
+                        request_logger.info(
                             f"Start for contact={contact}, counter={counter}, "
                             f"{len(dict_contact_messages[contact])} previous messages, "
                             f"at datetime={pd.Timestamp.now()}"
@@ -133,6 +139,13 @@ class ReadMessages:
                         request_logger.info(f"New     message i={i}: {message}")
                         # add to the dictionary of new message
                         dict_contact_messages[contact].append(message)
+                        # check if the message can be interpret as a signal to trade
+                        # skip the first few, as they refer to trades given before
+                        # we started this; why not > 1?
+                        # as I see sometimes it sees only 2 messages at first trial
+                        if counter <= NUM_FIRST_COUNTERS_TO_SKIP:
+                            continue
+                        request_logger.info("Check if message is about a trading order.")
                     request_logger.debug("End receive_messages()")
         except KeyboardInterrupt:
             request_logger.error("Ctrl+C was pressed, so stopping.")
@@ -247,11 +260,13 @@ class ReadMessages:
         t = conversation.text
         request_logger.debug(f"type(t)={type(t)}, len(t)={len(t)}, t={t}")
         # time.sleep(3)
-        self.driver.save_screenshot(f"screenshot_{counter_str}.png")
+        if SAVE_SCREENSHOT:
+            self.driver.save_screenshot(f"./open/screenshot_{counter_str}.png")
         element_html = conversation.get_attribute("innerHTML")  # exact HTML content
         request_logger.debug(f"element_html={element_html}")
-        with open(f"source_code_outer_{counter_str}.html", "w") as f:
-            f.write(element_html)
+        if SAVE_HTML:
+            with open(f"./output/source_code_outer_{counter_str}.html", "w") as f:
+                f.write(element_html)
         soup = BeautifulSoup(element_html, "html.parser")
         request_logger.debug(f"soup={soup}")
         request_logger.debug(f"soup.prettify()={soup.prettify()}")

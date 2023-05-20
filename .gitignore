@@ -9,6 +9,3 @@ notebooks/*/*.html
 
 # the folder that contains the Whatsapp profile
 Whatsapp
-# outputs while debugging
-*.png
-*.html
