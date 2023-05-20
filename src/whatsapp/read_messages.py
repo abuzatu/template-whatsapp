@@ -103,8 +103,8 @@ class ReadMessages:
                     if counter % 1 == 0:
                         print(".")
                     if counter % 1 == 0:
-                        request_logger.info(
-                            f"\nStart for contact={contact}, counter={counter}, "
+                        request_logger.debug(
+                            f"Start for contact={contact}, counter={counter}, "
                             f"{len(dict_contact_messages[contact])} previous messages, "
                             f"at datetime={pd.Timestamp.now()}"
                         )
@@ -220,7 +220,7 @@ class ReadMessages:
         time.sleep(1)
         request_logger.debug(f"End get_contact: xpath={xpath}")
 
-    def receive_messages(self, contact: str, counter: int, N: int) -> None:
+    def receive_messages(self, contact: str, counter: int, N: int) -> List[Message]:
         """Receive messages."""
         request_logger.debug(
             f"Start receive_messages(contact={contact}, counter={counter})"
@@ -232,14 +232,14 @@ class ReadMessages:
             '[@class="n5hs2j7m oq31bsqd gx1rr48f qh5tioqs"]'
             '[@data-tab="8"]'
             '[@role="application"]'
-            # '[@aria-label="Message list. Press right arrow key on a message to open message context menu."]'
+            # '[@aria-label="Message list. Press right arrow key on a message to open message context menu."]' # noqa
         )
         request_logger.debug(f"Search for latest conversation: xpath={xpath}")
         for i in range(1):
             counter_str = str(counter).zfill(3)
             text = ""
             text += "\n\n\n"
-            text += f"******** Start {counter_str}, {pd.Timestamp.now()}, {contact} ********\n"
+            text += f"******** Start {counter_str}, {pd.Timestamp.now()}, {contact} ********\n"  # noqa
             conversation = WebDriverWait(self.driver, WAIT_FOR_QR_CODE_SCAN).until(
                 EC.presence_of_element_located((By.XPATH, xpath))
             )

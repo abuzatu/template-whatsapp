@@ -41,23 +41,24 @@ class RequestLogger(logging.LoggerAdapter):
         """Add request_id, name and code context to logs."""
         if isinstance(msg, dict):
             pass
-        # convert str message to dict
+        # check if we pass either str or dict; but not convert str message to dict
         elif isinstance(msg, str):
-            msg = {
-                "message": msg,
-            }
+            # msg = {
+            #     "message": msg,
+            # }
+            pass
         else:
             raise TypeError("Logging message must be either str or dict.")
 
         # add request_id and asset_name to every log message
         if self.request_id is not None:
             msg["request_id"] = self.request_id
-        if self.name is not None:
+        if self.option_name is not None:
             msg["option_name"] = self.option_name
 
         # parse message to have city_name
         # at the beginning of every log message
-        msg = "[%s] %s" % (self.option_name, msg)
+        msg = "%s" % (msg)
         return msg, kwargs
 
 
