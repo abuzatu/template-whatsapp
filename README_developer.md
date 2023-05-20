@@ -503,7 +503,7 @@ echo "We will use SELENIUM_CROME_IMAGE=${SELENIUM_CROME_IMAGE}."
 
 ### Monitor the webdriver from the outside 
 
-From our local machine we want to monitor and interacted with the webdriver. Below is what I tried, and some sources I studied. Main reference is the [https://github.com/SeleniumHQ/docker-selenium#debugging](README.md) of `SeleniumHQ/docker-selenium` on `Debugging`, as it is for Debugging that we connect from the localmachine to the webserver inside. 
+From our local machine we want to monitor and interacted with the webdriver. Below is what I tried, and some sources I studied. Main reference is the [https://github.com/SeleniumHQ/docker-selenium#debugging](README.md) of `SeleniumHQ/docker-selenium` on `Debugging`, as it is for Debugging that we connect from the local machine to the webserver inside. 
 
 #### What worked for me
 

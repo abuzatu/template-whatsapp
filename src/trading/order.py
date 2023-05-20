@@ -44,19 +44,6 @@ class Order:
             f"TPs={self.TPs}, "
         )
 
-    def fit(self, text: str) -> None:
-        """Fit (to be defined for each inherited class)."""
-        pass
-
     def print(self) -> None:
         """Print."""
         print(self.__str__())
-
-    def fit_examples(self) -> None:
-        """fit_examples."""
-        logging.info("Will start to fit examples.")
-        for example in self.examples:
-            print()
-            self.fit(example)
-            self.print()
-            self.reset()

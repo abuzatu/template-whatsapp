@@ -2,7 +2,7 @@
 
 from typing import List
 
-from trading.order_base import Order
+from trading.order import Order
 from utils.logger import request_logger
 
 
