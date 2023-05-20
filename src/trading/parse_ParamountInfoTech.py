@@ -5,6 +5,12 @@ from typing import List
 from trading.order import Order
 from utils.logger import request_logger
 
+dict_word_symbol = {
+    "GOLD": "XAUUSD",
+    "OIL": "XTIUSD",
+    "WTI": "XTIUSD",
+}
+
 
 class Parse_ParamountInfoTech(Order):
     """Parse one text message from ParamountInfoTech (Akib).
@@ -34,6 +40,7 @@ class Parse_ParamountInfoTech(Order):
             "Sell Gold 2026, TP 2009, SL 2039",
             "Sell gold 2049, TP 2032, SL 2065",
             "BUY GOLD 2035, TP 2055, SL 2018",
+            "BUY GOLD 2006, TP 2016, SL 1997",
             "Buy... US30...... @33565.... Target=33870... StopLoss=33296",
             "BUY US30 33670, TP 33945, SL 33435",
             "SELL US30 33480, TP 33210, SL 33735",
@@ -51,7 +58,7 @@ class Parse_ParamountInfoTech(Order):
             Sell..... Gbp/Aud...@1.86840..
             Target=1.86041... StopLoss=1.87612
             """,
-            "Sell............Aud/Cad............@0.89428...........Target=0.88787...........StopLoss=0.90021",
+            "Sell............Aud/Cad............@0.89428...........Target=0.88787...........StopLoss=0.90021",  # noqa
             "Sell.... Aud/Nzd....@1.06193..Target=1.05505... STOPLOSS=1.06868",
             """
             Sell.... Aud/Nzd....@1.06193..
@@ -180,6 +187,13 @@ class Parse_ParamountInfoTech(Order):
             Buy.... Eur/Cad...@1.50634..
             Target=1.51399... StopLoss=1.49930
             """,
+            """
+            Sell.... Chf/Jpy....@151.783...
+            Target=150.221... StopLoss=153.135
+
+            Sell.... Eur/Jpy....@148.722...
+            Target=146.959... StopLoss=150.330
+            """,
         ]
 
         # action: modify trade
@@ -189,15 +203,6 @@ class Parse_ParamountInfoTech(Order):
             "Modify target price at 1.0600 in audnzd",
             "Modify target price at 0.8922 in audcad",
             "Modify target price at 1976 in gold",
-            """
-            modify traget price at 33580 in us30 now
-
-            modify target price at 1968 in gold
-
-            modify target price at 1.6205 in euraud
-
-            modify target price at 1.4507 in eurcad
-            """,
             "Modify target price at 70.12 in WTI",
             "modify stop loss to 1996 in gold",
             "Set target price at 0.9045 in audcad",
@@ -214,11 +219,13 @@ class Parse_ParamountInfoTech(Order):
             Set target price at 1.8700 in gbpaud
             """,
             """
-            Sell.... Chf/Jpy....@151.783...
-            Target=150.221... StopLoss=153.135
+            modify traget price at 33580 in us30 now
 
-            Sell.... Eur/Jpy....@148.722...
-            Target=146.959... StopLoss=150.330
+            modify target price at 1968 in gold
+
+            modify target price at 1.6205 in euraud
+
+            modify target price at 1.4507 in eurcad
             """,
         ]
 
@@ -234,7 +241,6 @@ class Parse_ParamountInfoTech(Order):
             "Book profit and close nzdjpy now at 85.44",
             "Book profit and close gold now at 2008",
             "Close AUDUSD now in small loss 0.6673",
-            "BUY GOLD 2006, TP 2016, SL 1997",
             "Close gold now at loss at 2009.81",
             "Book profit and close usdchf now at 0.8929",
             "Book profit and close gbpusd now at 1.2511",
@@ -286,7 +292,7 @@ class Parse_ParamountInfoTech(Order):
             "I am going for a meeting will be back after 1 hour",
             "SL hit in gold please wait for fresh recovery trades",
             """
-            I am leaving for today due to some personal reason now 
+            I am leaving for today due to some personal reason now
 
             Will comeback tomorrow
             """,
@@ -304,6 +310,13 @@ class Parse_ParamountInfoTech(Order):
             + self.examples_announcement
         )
 
+        self.examples = (
+            # self.examples_open
+            self.examples_modify
+            # self.examples_close
+            # self.examples_announcement
+        )
+
     def fit_examples(self) -> None:
         """Fit several texts as examples."""
         request_logger.info("Will start to fit examples.")
@@ -314,7 +327,7 @@ class Parse_ParamountInfoTech(Order):
                 print(o)
 
     def fit(self, text: str) -> List[Order]:
-        """Parse a text message with rule-based to build a list of Order.
+        r"""Parse a text message with rule-based to build a list of Order.
 
         Place all in capital letters, as there is not consistent approach.
 
@@ -324,8 +337,8 @@ class Parse_ParamountInfoTech(Order):
         We split by that and then create a function that parses for one order.
         """
         text = text.upper()
-        print("initial text")
-        print(text)
+        # print("initial text")
+        # print(text)
 
         orders = []
         for text_one in text.split("\n\n"):
@@ -346,12 +359,7 @@ class Parse_ParamountInfoTech(Order):
         o.text = text
         if "BUY" in text or "SELL" in text:
             o = self.parse_for_order_open(o, text)
-        elif (
-            "MODIFY TARGET" in text
-            or "SET TARGET" in text
-            or "MODIFY STOP" in text
-            or "SET STOP" in text
-        ):
+        elif "MODIFY" in text or "SET" in text:
             o = self.parse_for_order_modify(o, text)
         elif "BOOK PROFIT" in text or "CLOSE" in text:
             o = self.parse_for_order_close(o, text)
@@ -365,10 +373,90 @@ class Parse_ParamountInfoTech(Order):
 
     def parse_for_order_modify(self, o: Order, text: str) -> Order:
         """Parse for order modify."""
+        # correct for typos as they happen sometimes
+        text = text.replace("TRAGET", "TARGET")
+
+        symbol_candidates = []
+        for word in text.split():
+            if word.replace(".", "1").isnumeric():
+                if "TARGET PRICE" in text:
+                    o.TPs = [float(word)]
+                elif "STOP LOSS" in text:
+                    o.SL = float(word)
+                else:
+                    print("WARNING! Neither TARGET PRICE, nor STOP LOSS.")
+            elif word in [
+                "MODIFY",
+                "SET",
+                "TARGET",
+                "PRICE",
+                "STOP",
+                "LOSS",
+                "AT",
+                "IN",
+                "TO",
+                "NOW",
+            ]:
+                pass
+            else:
+                print(f"word is likely the asset={word}")
+                symbol_candidates.append(word)
+        if len(symbol_candidates) == 0:
+            print("WARNING! There is no candidate remaining for symbol.")
+        elif len(symbol_candidates) > 1:
+            print("WARNING! There are several candidates remaining for symbol.")
+        else:
+            # good, there is only one candidate remaining for symbol
+            word = symbol_candidates[0]
+            o.symbol = (
+                word if word not in dict_word_symbol.keys() else dict_word_symbol[word]
+            )
         return o
 
     def parse_for_order_close(self, o: Order, text: str) -> Order:
-        """Parse for order close."""
+        """Parse for order close.
+
+        Close is to be followed immediately at market price.
+        """
+        o.action = "close"
+        o.type = "market"
+        # let's try to find the symbol of the asset to close
+        # since words can come in any order, we will eliminate all the words one by one
+        # that are known to be not be the asset, and will eliminate the price too
+        # and what remains should be the asset
+        symbol_candidates = []
+        for word in text.split():
+            if word.replace(".", "1").isnumeric():
+                o.CMP = float(word)
+            elif word in [
+                "BOOK",
+                "PROFIT",
+                "AND",
+                "CLOSE",
+                "NOW",
+                "AT",
+                "IN",
+                "SMALL",
+                "LARGE",
+                "BIG",
+                "LOSS",
+                "COST",
+                "OR",
+            ]:
+                pass
+            else:
+                print(f"word is likely the asset={word}")
+                symbol_candidates.append(word)
+        if len(symbol_candidates) == 0:
+            print("WARNING! There is no candidate remaining for symbol.")
+        elif len(symbol_candidates) > 1:
+            print("WARNING! There are several candidates remaining for symbol.")
+        else:
+            # good, there is only one candidate remaining for symbol
+            word = symbol_candidates[0]
+            o.symbol = (
+                word if word not in dict_word_symbol.keys() else dict_word_symbol[word]
+            )
         return o
 
     def parse_for_order_announcement(self, o: Order, text: str) -> Order:

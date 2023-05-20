@@ -4,7 +4,6 @@ The order can be then placed on different platforms with different APIs.
 """
 
 from typing import Optional, List
-import logging
 
 
 class Order:
@@ -24,7 +23,9 @@ class Order:
         self.type: Optional[str] = None  # market, entry (limit or stop orders)
         self.direction: Optional[str] = None  # buy or sell
         self.CMP: Optional[float] = None  # current market price
-        self.EPs: List[float] = []  # entry prices (only one for limit or stop orders)
+        self.EPs: List[
+            float
+        ] = []  # entry prices (only one for limit, stop, close orders)
         # a list of two values if a range is given for market range
         self.SL: Optional[float] = None  # stop loss (SL)
         self.TPs: List[float] = []  # list of target prices (TPs) if several are given
