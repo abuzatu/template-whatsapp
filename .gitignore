@@ -6,3 +6,6 @@
 
 notebooks/*/*.png
 notebooks/*/*.html
+
+# the folder that contains the Whatsapp profile
+Whatsapp
