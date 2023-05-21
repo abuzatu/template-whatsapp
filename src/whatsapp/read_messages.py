@@ -14,21 +14,21 @@ from selenium.webdriver.common.keys import Keys
 
 from cli.cli_send_message import CLI
 from utils.logger import request_logger
+from trading.parse_InvestorsWizard import Parse_InvestorsWizard
+from trading.parse_PipsGainer import Parse_PipsGainer
+from trading.parse_ParamountInfoTech import Parse_ParamountInfoTech
 from whatsapp.message import Message
 from whatsapp.web_driver import Driver
 
 from configs.settings import (
     WAIT_FOR_SEARCH_BOX,
     WAIT_FOR_QR_CODE_SCAN,
+    WAIT_AFTER_EACH_CONTACT,
+    NUM_FIRST_COUNTERS_TO_SKIP,
+    NUM_LATEST_MESSAGES_TO_READ,
+    SAVE_SCREENSHOT,
+    SAVE_HTML,
 )
-
-# read last how many messages
-N = 5
-# skip the first 2 rounds as you start, as it refers to previous messages
-NUM_FIRST_COUNTERS_TO_SKIP = 2
-
-SAVE_SCREENSHOT = False
-SAVE_HTML = False
 
 
 class ReadMessages:
@@ -106,10 +106,10 @@ class ReadMessages:
                     # we can choose to print a . for each loop, to let us know
                     # how fast the loops are progressing
                     if counter % 1 == 0:
-                        pass
-                        # print(".")
+                        # pass
+                        print(".")
                     if counter % 1 == 0:
-                        request_logger.info(
+                        request_logger.debug(
                             f"Start for contact={contact}, counter={counter}, "
                             f"{len(dict_contact_messages[contact])} previous messages, "
                             f"at datetime={pd.Timestamp.now()}"
@@ -125,7 +125,9 @@ class ReadMessages:
                     self.get_contact(contact)
                     request_logger.debug("Start receive_messages()")
                     time.sleep(0)
-                    messages = self.receive_messages(contact, counter, N)
+                    messages = self.receive_messages(
+                        contact, counter, NUM_LATEST_MESSAGES_TO_READ
+                    )
                     request_logger.debug(f"Getting back {len(messages)}:")
                     # loop through the messages and find those that are not yet processed
                     # for now using brute force to compare to all previous messages
@@ -133,7 +135,9 @@ class ReadMessages:
                         message = messages[i]
                         request_logger.debug(f"Received message i={i}: {message}")
                         if message is None or message in dict_contact_messages[contact]:
-                            # if message already in the list, do nothing
+                            request_logger.debug(
+                                "message already in the list, do nothing"
+                            )
                             continue
                         # if here, the message is not in the list, so we process it
                         request_logger.info(f"New     message i={i}: {message}")
@@ -145,8 +149,41 @@ class ReadMessages:
                         # as I see sometimes it sees only 2 messages at first trial
                         if counter <= NUM_FIRST_COUNTERS_TO_SKIP:
                             continue
-                        request_logger.info("Check if message is about a trading order.")
+                        actual_message = message.actual_message
+                        request_logger.info(
+                            "Building an list of orders from the actual_message="
+                            f"{actual_message}"
+                        )
+                        if contact == "Meisha Investors Wizard":
+                            orders = Parse_InvestorsWizard().fit(actual_message)
+                        elif contact == "PipsGainer Research":
+                            orders = Parse_PipsGainer().fit(actual_message)
+                        elif contact == "Harsh Colleague Vinay":
+                            orders = Parse_PipsGainer().fit(actual_message)
+                        elif contact == "Akib Alam Paramount InfoSoft Fost InfoTech":
+                            orders = Parse_ParamountInfoTech().fit(actual_message)
+                        elif contact == "+44 7465 660053":
+                            orders = Parse_ParamountInfoTech().fit(actual_message)
+                        elif contact == "+44 7465 614471":
+                            orders = Parse_PipsGainer().fit(actual_message)
+                        elif contact == "+44 7309 966580":
+                            orders = Parse_InvestorsWizard().fit(actual_message)
+                        else:
+                            request_logger.warning(
+                                f"contact{contact} not known, " "so can not build orders."
+                            )
+                        request_logger.info("Showing orders built")
+                        for o in orders:
+                            print(o)
                     request_logger.debug("End receive_messages()")
+                    if counter % 1 == 0:
+                        request_logger.debug(
+                            f"End for contact={contact}, counter={counter}, "
+                            f"{len(dict_contact_messages[contact])} previous messages, "
+                            f"at datetime={pd.Timestamp.now()}, "
+                            f"will wait {WAIT_AFTER_EACH_CONTACT} before next contact."
+                        )
+                    time.sleep(WAIT_AFTER_EACH_CONTACT)
         except KeyboardInterrupt:
             request_logger.error("Ctrl+C was pressed, so stopping.")
         finally:
@@ -274,7 +311,11 @@ class ReadMessages:
         # div1=soup.find_all(class_="_1-FMR message-in focusable-list-item")[-1]
         div1_all = soup.find_all("div", attrs={"class": re.compile("_1-FMR.*")})
         request_logger.debug(f"len(div1_all)={len(div1_all)}")
-        messages = self.get_messages(div1_all, contact=contact, N=N)
+        messages = self.get_messages(
+            div1_all,
+            contact=contact,
+            N=N,
+        )
         request_logger.debug(f"messages={messages}")
         return messages
 

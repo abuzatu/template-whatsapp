@@ -115,7 +115,7 @@ run_whatsapp_send_message_22:
 run_whatsapp_read_messages_3:
 	./bin/dev/docker-exec.sh poetry run dotenv run ipython \
 	bin/run/run_whatsapp_read_messages.py \
-	data/input/contacts3.txt
+	data/input/contacts4.txt
 
 send:
 	make run_whatsapp_send_message_22

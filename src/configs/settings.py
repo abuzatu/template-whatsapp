@@ -8,7 +8,6 @@ from typing import List
 TITLE = "An API title"
 DESCRIPTION = "An API description."
 
-
 WORK_DIR = os.getenv("WORKDIR", "")
 LOGGING_LEVEL = os.getenv("LOGGING_LEVEL", "INFO")
 
@@ -103,6 +102,13 @@ WAIT_FOR_QR_CODE_SCAN = 100  # seconds
 
 WAIT_FOR_SEARCH_BOX = 100  # seconds
 
-WAIT_AFTER_EACH_CONTACT = 5  # seconds
+WAIT_AFTER_EACH_CONTACT = 1  # seconds
 
+# skip the first 2 rounds as you start, as it refers to previous messages
 NUM_FIRST_COUNTERS_TO_SKIP = 2  # number
+
+# read last how many messages
+NUM_LATEST_MESSAGES_TO_READ = 5
+
+SAVE_SCREENSHOT = False
+SAVE_HTML = False
