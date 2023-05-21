@@ -8,4 +8,6 @@ notebooks/*/*.png
 notebooks/*/*.html
 
 # the folder that contains the Whatsapp profile
-Whatsapp
+# use the two / at beginning and end to ignore only this top level folder
+# but not src/whatsapp
+/Whatsapp/
