@@ -7,7 +7,7 @@ places a trade from them, maybe also uses a FastAPI to record the trades to a ba
 
 Create and start the standalone selenium-chromium container based on an image for Arm architecture (M1).
 ```
-make chromium-start
+make selenium-start
 ```
 
 Copy the example of these files and modify if needed.
