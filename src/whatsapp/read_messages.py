@@ -126,9 +126,9 @@ class ReadMessages:
                         dict_contact_messages[contact] = []
                     # we can choose to print a . for each loop, to let us know
                     # how fast the loops are progressing
-                    if counter % 1 == 0:
+                    if counter % 10 == 0:
                         # pass
-                        print(".")
+                        print(f"... {str(counter).zfill(3)}, {pd.Timestamp.now()}")
                     if counter % 1 == 0:
                         request_logger.debug(
                             f"Start for contact={contact}, counter={counter}, "
