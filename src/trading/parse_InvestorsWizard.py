@@ -199,7 +199,7 @@ class Parse_InvestorsWizard:
             o.SL = float(words[9])
         return o
 
-    def set_update(self, o: Order, words: List[str]) -> None:
+    def set_update(self, o: Order, words: List[str]) -> Order:
         """Fill values for UPDATE:, usually to close an order if not closed already.
 
         TODO: close also order that are not yet trades, if command is given.
@@ -212,4 +212,9 @@ class Parse_InvestorsWizard:
         else:
             request_logger.warning("For UPDATE there that is not to close not coded.")
             o.action = "error"
+        return o
+
+    def parse_for_order_announcement(self, o: Order, text: str) -> Order:
+        """Parse for order announcement."""
+        o.action = "announcement"
         return o

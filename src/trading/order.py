@@ -12,8 +12,10 @@ class Order:
 
     def __init__(
         self,
+        order_id: Optional[int] = 0,
     ) -> None:
         """Initialize."""
+        self.id: Optional[int] = order_id
         self.reset()
 
     def reset(self) -> None:
@@ -46,6 +48,7 @@ class Order:
             f"EPs={self.EPs}, "
             f"SL={self.SL}, "
             f"TPs={self.TPs}, "
+            f"id={str(self.id).zfill(5)}, "
             f'datetime={self.datetime.strftime("%Y-%m-%d %H:%M:%S")}, '
             f'author="{self.author}", '
             f'text="{self.text}", '

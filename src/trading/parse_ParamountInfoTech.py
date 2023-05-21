@@ -75,7 +75,7 @@ class Parse_ParamountInfoTech:
             Target=1.05505... STOPLOSS=1.06868
             """,
             """
-            Buy.... Wti.... @72.647.... 
+            Buy.... Wti.... @72.647....
             Target=74.595.... StopLoss=70.749
             """,
             """
@@ -83,7 +83,7 @@ class Parse_ParamountInfoTech:
             Target=0.84687.... StopLoss=0.83633
             """,
             """
-            Sell... Wti.... @70.328.... 
+            Sell... Wti.... @70.328....
             Target=68.612.... StopLoss=71.874
             """,
             """
@@ -166,7 +166,7 @@ class Parse_ParamountInfoTech:
             Target=0.68360.. StopLoss=0.67149
             """,
             """
-            Sell.. Gold.... @2022.97.... 
+            Sell.. Gold.... @2022.97....
             Target=1997.40... StopLoss=2048.29
             """,
             """
@@ -177,7 +177,7 @@ class Parse_ParamountInfoTech:
             Target=1.08141... StopLoss=1.06465
             """,
             """
-            Sell.... US30...... @33211..... 
+            Sell.... US30...... @33211.....
             Target=32939.... StopLoss=33411
             """,
             """
@@ -223,7 +223,7 @@ class Parse_ParamountInfoTech:
             "Set target price at 1.6900 in GBPCAD",
             "Set target price at 33180 in us30",
             """
-            Set target price at 133.75 in usdjpy 
+            Set target price at 133.75 in usdjpy
 
 
             Set target price at 1.8700 in gbpaud
