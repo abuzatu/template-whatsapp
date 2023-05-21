@@ -172,7 +172,7 @@ class ReadMessages:
                             continue
                         actual_message = message.actual_message
                         request_logger.debug(
-                            "Building an list of orders from the actual_message="
+                            "Building a list of orders from the actual_message="
                             f"{actual_message}"
                         )
                         if contact == "Meisha Investors Wizard":
@@ -183,11 +183,11 @@ class ReadMessages:
                             orders = Parse_PipsGainer().fit(actual_message)
                         elif contact == "Akib Alam Paramount InfoSoft Fost InfoTech":
                             orders = Parse_ParamountInfoTech().fit(actual_message)
-                        elif contact == "+44 7465 660053":
+                        elif contact == "+44 7309 966580":
                             orders = Parse_ParamountInfoTech().fit(actual_message)
                         elif contact == "+44 7465 614471":
                             orders = Parse_PipsGainer().fit(actual_message)
-                        elif contact == "+44 7309 966580":
+                        elif contact == "+44 7465 660053":
                             orders = Parse_InvestorsWizard().fit(actual_message)
                         else:
                             request_logger.warning(
