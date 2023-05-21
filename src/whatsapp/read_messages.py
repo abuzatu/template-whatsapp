@@ -90,7 +90,7 @@ class ReadMessages:
         # counting the number of loops we did across all contacts since script started
         counter = 0
         # storing the list of messages for each contact
-        dict_contact_messages: Dict[str, List[str]] = {}
+        dict_contact_messages: Dict[str, List[Message]] = {}
 
         # we want a continuous repeating loop, so using a while True
         # but if I close the loop with control+C, we want the driver to quit cleanly
