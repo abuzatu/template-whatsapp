@@ -14,8 +14,9 @@ class Parse_InvestorsWizard:
     """
 
     def __init__(self) -> None:
-        """init."""
-        super().__init__()
+        """Init."""
+        self.author = "IW"
+
         self.examples = [
             "FOREX CALL: BUY GBPNZD ABOVE 1.9255 TARGET 1.9275 /1.9295 STOPLOSS 1.9235",
             "FOREX CALL: SELL GBPNZD BELOW 1.9545 TARGET 1.9525 /1.9505 STOPLOSS 1.9565",
@@ -52,12 +53,45 @@ class Parse_InvestorsWizard:
         request_logger.info("Will start to fit examples.")
         for example in self.examples:
             print()
-            o = self.fit(example)
-            print(o)
+            orders = self.fit(example)
+            for o in orders:
+                print(o)
 
-    def fit(self, text: str) -> None:
-        """Parse a text message with rule-based."""
-        text = self.upper(text)
+    def fit(self, text: str) -> List[Order]:
+        r"""Parse a text message with rule-based to build a list of Order.
+
+        Place all in capital letters, as there is not consistent approach.
+
+        Sometimes there are two lines for the same order, split by \n.
+        And also there are several orders in the same text message, also separted by \n.
+        That means that two of \n separate texts for one order.
+        We split by that and then create a function that parses for one order.
+        """
+        text = text.upper()
+        # print("initial text")
+        # print(text)
+
+        orders = []
+        for text_one in text.split("\n\n"):
+            # this is the text used for one order
+            # sometimes even this text is split on different lines
+            # so we eliminate those
+            # text_one = text_one.replace("\n", " ").replace("\t", " ")
+            text_one = " ".join(text_one.split())
+            # print("new text")
+            # print(text_one)
+            o = self.build_one_order(text_one)
+            orders.append(o)
+        return orders
+
+    def build_one_order(self, text: str) -> Order:
+        """Parse one text to build one Order."""
+        o = Order()
+        # fill already the author
+        o.author = self.author
+        # fill already the text as passed originally
+        o.text = text
+
         text = self.deal_with_slash(text)
         text = self.deal_with_traders_delight(text)
         request_logger.debug(f"Fit order from text={text}")
@@ -68,23 +102,18 @@ class Parse_InvestorsWizard:
             request_logger.debug(
                 "Just empty string or only one word, so can not be a trade, we ignore."
             )
+            o = self.parse_for_order_announcement(o, text)
+            return o
         elif words[1] == "CALL:":
             self.segment = words[0]
-            order = self.set_call(words, is_entry_order)
+            o = self.set_call(o, words, is_entry_order)
         elif words[1] == "UPDATE:":
             self.segment = words[0]
-            order = self.set_update(words)
+            o = self.set_update(o, words)
         else:
             request_logger.debug(f"Action={words[1]} not known, choose CALL: or UPDATE:")
-            order = Order()
-        return order
-
-    def upper(self, text: str) -> str:
-        """Put all text in upper cases.
-
-        Sometimes it has info about pending order in capital or lower.
-        """
-        return text.upper()
+            o.action = "error"
+        return o
 
     def deal_with_slash(self, text: str) -> str:
         """Deal with /.
@@ -129,9 +158,8 @@ class Parse_InvestorsWizard:
         """
         return "PENDING ORDER" in text
 
-    def set_call(self, words: List[str], is_entry_order: bool) -> Order:
+    def set_call(self, o: Order, words: List[str], is_entry_order: bool) -> Order:
         """Fill values for CALL:, usually to open an order."""
-        o = Order()
         o.action = "open"
         o.direction = words[2].lower()
         if o.direction not in ["buy", "sell"]:
@@ -144,17 +172,17 @@ class Parse_InvestorsWizard:
             if words[5].isnumeric():
                 o.type = "market"
                 o.CMP = float(words[5])
-                print(f"o.CMP={o.CMP}")
+                # print(f"o.CMP={o.CMP}")
             elif "-" in words[5]:
                 # then a range of values is given
                 str_EP1, str_EP2 = words[5].split("-")
-                print(str_EP1, str_EP2)
+                # print(str_EP1, str_EP2)
                 if str_EP1.isnumeric() and str_EP2.isnumeric():
                     EP1 = float(str_EP1)
                     EP2 = float(str_EP2)
                     o.type = "marketrange"
                     o.EPs = [EP1, EP2]
-                print(EP1, EP2)
+                # print(EP1, EP2)
             else:
                 o.type = "market"
                 print("Current Market price not given in text.")
@@ -171,12 +199,11 @@ class Parse_InvestorsWizard:
             o.SL = float(words[9])
         return o
 
-    def set_update(self, words: List[str]) -> None:
+    def set_update(self, o: Order, words: List[str]) -> None:
         """Fill values for UPDATE:, usually to close an order if not closed already.
 
         TODO: close also order that are not yet trades, if command is given.
         """
-        o = Order()
         if "BOOKED" in words:
             # we will close the trade at market value
             o.action = "close"
@@ -184,4 +211,5 @@ class Parse_InvestorsWizard:
             o.symbol = words[2]
         else:
             request_logger.warning("For UPDATE there that is not to close not coded.")
+            o.action = "error"
         return o

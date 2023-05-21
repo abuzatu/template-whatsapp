@@ -14,8 +14,9 @@ class Parse_PipsGainer:
     """
 
     def __init__(self) -> None:
-        """init."""
-        super().__init__()
+        """Init."""
+        self.author = "PGR"
+
         self.examples = [
             """
             BASIC FOREX: BUY STOP NZDCAD 0.7985
@@ -51,19 +52,53 @@ class Parse_PipsGainer:
         request_logger.info("Will start to fit examples.")
         for example in self.examples:
             print()
-            o = self.fit(example)
-            print(o)
+            orders = self.fit(example)
+            for o in orders:
+                print(o)
 
-    def fit(self, text: str) -> Order:
-        """Parse a text message with rule-based."""
+    def fit(self, text: str) -> List[Order]:
+        r"""Parse a text message with rule-based to build a list of Order.
+
+        Place all in capital letters, as there is not consistent approach.
+
+        Sometimes there are two lines for the same order, split by \n.
+        And also there are several orders in the same text message, also separted by \n.
+        That means that two of \n separate texts for one order.
+        We split by that and then create a function that parses for one order.
+        """
+        text = text.upper()
+        # print("initial text")
+        # print(text)
+
+        orders = []
+        for text_one in text.split("\n\n"):
+            # this is the text used for one order
+            # sometimes even this text is split on different lines
+            # so we eliminate those
+            # text_one = text_one.replace("\n", " ").replace("\t", " ")
+            text_one = " ".join(text_one.split())
+            # "new text")
+            # print(text_one)
+            o = self.build_one_order(text_one)
+            orders.append(o)
+        return orders
+
+    def build_one_order(self, text: str) -> Order:
+        """Parse one text to build one Order."""
+        o = Order()
+        # fill already the author
+        o.author = self.author
+        # fill already the text as passed originally
+        o.text = text
+
         if text.rstrip() in [
             "ACTIVATED",
             "TP HIT",
             "SL HIT",
         ]:
-            # set no trade
-            request_logger.warning("Update on a trade. Will ignore.")
-            return
+            o = self.parse_for_order_announcement(o, text)
+            return o
+
         # split the text into words
         request_logger.debug(f"text={text}")
         words = text.split()
@@ -72,17 +107,34 @@ class Parse_PipsGainer:
             request_logger.debug(
                 "Just empty string or only one word, so can not be a trade, we ignore."
             )
-            o = Order()
-        elif len(words) > 12 and words[12] == "www.PipsGainer.com":
-            o = self.set_call(words)
+            o = self.parse_for_order_announcement(o, text)
+        elif len(words) > 12 and words[12] == "WWW.PIPSGAINER.COM":
+            o = self.parse_for_order_open(o, words)
         else:
             request_logger.debug("Regular message, will ignore.")
-            o = Order()
+            o = self.parse_for_order_announcement(o, text)
         return o
 
-    def set_call(self, words: List[str]) -> Order:
+    def parse_for_order_announcement(self, o: Order, text: str) -> Order:
+        """Parse for order announcement."""
+        o.action = "announcement"
+        return o
+
+    def parse_for_order_open(self, o: Order, words: List[str]) -> Order:
         """Fill values for CALL:, usually to open an order."""
-        o = Order()
+        if words[12] != "WWW.PIPSGAINER.COM":
+            request_logger.warning(
+                "Problem in format, as www.PipsGainer.com is not position 12!"
+            )
+            request_logger.warning(f"words={words}")
+            o.action = "error"
+            return o
+        if len(words) > 13:
+            request_logger.info("This is an update")
+            o.action = "announcement"
+            return o
+
+        # if here it is really to open an order
         o.segment = words[1][0:-1]
         o.action = "open"
         o.direction = words[2].lower()
@@ -101,23 +153,14 @@ class Parse_PipsGainer:
         o.TPs.append(float(words[7]))
         o.SL = float(words[9])
         o.CMP = float(words[11])  # current market price
-        if words[12] != "www.PipsGainer.com":
-            request_logger.warning(
-                "Problem in format, as www.PipsGainer.com is not position 12!"
-            )
-            request_logger.warning(f"words={words}")
-        if len(words) > 13:
-            request_logger.info("This is an update")
-            pass
         return o
 
-    def set_update(self, words: List[str]) -> Order:
+    def set_update(self, o: Order, words: List[str]) -> Order:
         """Fill values for UPDATE:, usually to close an order if not closed already.
 
         Not used for now.
         """
-        print(words)
-        o = Order()
+        # print(words)
         # find position of pipsgainer
         if "BOOKED" in words:
             # we will close the trade at market value
@@ -126,4 +169,6 @@ class Parse_PipsGainer:
             o.symbol = words[2]
         else:
             request_logger.warning("For UPDATE there that is not to close not coded.")
+            o.action = "modify"
+            # but lacking more info like TP, SL
         return o

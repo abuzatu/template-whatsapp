@@ -1,5 +1,6 @@
 """Module to parse one text message from ParamountInfoTech (Akib)."""
 
+import re
 from typing import List
 
 from trading.order import Order
@@ -12,7 +13,12 @@ dict_word_symbol = {
 }
 
 
-class Parse_ParamountInfoTech(Order):
+def get_symbol(word: str) -> str:
+    """Get symbol."""
+    return word if word not in dict_word_symbol.keys() else dict_word_symbol[word]
+
+
+class Parse_ParamountInfoTech:
     """Parse one text message from ParamountInfoTech (Akib).
 
     One text message can produce one or several orders.
@@ -20,11 +26,11 @@ class Parse_ParamountInfoTech(Order):
     """
 
     def __init__(self) -> None:
-        """init."""
-        super().__init__()
+        """Init."""
+        self.author = "PMT"
 
-        # action: open order to trade
-        self.examples_open = [
+        # action: open order to trade v1
+        self.examples_open_v1 = [
             "BUY GOLD @ 1974 TP 1990 SL 1960",
             "BUY GOLD 1986, TP 2009, SL 1970",
             "BUY GOLD 1966, TP 1989, SL 1947",
@@ -41,9 +47,13 @@ class Parse_ParamountInfoTech(Order):
             "Sell gold 2049, TP 2032, SL 2065",
             "BUY GOLD 2035, TP 2055, SL 2018",
             "BUY GOLD 2006, TP 2016, SL 1997",
-            "Buy... US30...... @33565.... Target=33870... StopLoss=33296",
             "BUY US30 33670, TP 33945, SL 33435",
             "SELL US30 33480, TP 33210, SL 33735",
+        ]
+
+        # action: open order to trade v2
+        self.examples_open_v2 = [
+            "Buy... US30...... @33565.... Target=33870... StopLoss=33296",
             """
             Sell..... Gbp/Aud...@1.86840..
             Target=1.86041... StopLoss=1.87612
@@ -304,15 +314,17 @@ class Parse_ParamountInfoTech(Order):
 
         # add them all
         self.examples = (
-            self.examples_open
+            self.examples_open_v1
+            + self.examples_open_v2
             + self.examples_modify
             + self.examples_close
             + self.examples_announcement
         )
 
         self.examples = (
-            # self.examples_open
-            self.examples_modify
+            # self.examples_open_v1
+            self.examples_open_v2
+            # self.examples_modify
             # self.examples_close
             # self.examples_announcement
         )
@@ -321,7 +333,7 @@ class Parse_ParamountInfoTech(Order):
         """Fit several texts as examples."""
         request_logger.info("Will start to fit examples.")
         for example in self.examples:
-            print()
+            print("")
             orders = self.fit(example)
             for o in orders:
                 print(o)
@@ -347,8 +359,8 @@ class Parse_ParamountInfoTech(Order):
             # so we eliminate those
             # text_one = text_one.replace("\n", " ").replace("\t", " ")
             text_one = " ".join(text_one.split())
-            print("new text")
-            print(text_one)
+            # print("new text")
+            # print(text_one)
             o = self.build_one_order(text_one)
             orders.append(o)
         return orders
@@ -356,6 +368,9 @@ class Parse_ParamountInfoTech(Order):
     def build_one_order(self, text: str) -> Order:
         """Parse one text to build one Order."""
         o = Order()
+        # fill already the author
+        o.author = self.author
+        # fill already the text as passed originally
         o.text = text
         if "BUY" in text or "SELL" in text:
             o = self.parse_for_order_open(o, text)
@@ -368,7 +383,132 @@ class Parse_ParamountInfoTech(Order):
         return o
 
     def parse_for_order_open(self, o: Order, text: str) -> Order:
-        """Parse for order open."""
+        """Parse for order open.
+
+        There are two styles, maybe coming from different researchers.
+        1) usually in gold
+        "BUY GOLD @ 1974 TP 1990 SL 1960",
+        2) usually in forex
+        "Sell... Gbp/Cad....@1.69131... Target=1.68330... StopLoss=1.69907"
+
+        Let's treat them separately.
+        """
+        if "TP" in text and "SL" in text:
+            o = self.parse_for_order_open_v1(o, text)
+        elif "TARGET" in text and "STOPLOSS" in text:
+            o = self.parse_for_order_open_v2(o, text)
+        else:
+            print("WARNING: Parse for order open but ca not find version")
+            o = Order()
+        return o
+
+    def parse_for_order_open_v1(self, o: Order, text: str) -> Order:
+        """Parse for order open v1.
+
+        usually in gold:
+        BUY GOLD @ 1974 TP 1990 SL 1960
+        BUY GOLD 1986, TP 2009, SL 1970
+        GOLD BUY 2028, TP 2042, SL 2015
+
+        We will remove @ and ,
+        Then values come in the right order.
+        Note the first two can sometimes be exchanged.
+        """
+        text = text.replace("@", " ").replace(",", " ")
+        # print(text)
+        elements = text.split()
+        request_logger.info(f"elements={elements}.")
+        if elements[0] == "BUY" or elements[1] == "BUY":
+            o.action = "open"
+            o.type = "entry"
+            o.direction = "buy"
+            if elements[0] == "BUY":
+                o.symbol = get_symbol(elements[1])
+            elif elements[1] == "BUY":
+                o.symbol = get_symbol(elements[0])
+        elif elements[0] == "SELL" or elements[1] == "SELL":
+            o.action = "open"
+            o.type = "entry"
+            o.direction = "sell"
+            if elements[0] == "SELL":
+                o.symbol = get_symbol(elements[1])
+            elif elements[1] == "SELL":
+                o.symbol = get_symbol(elements[0])
+        else:
+            print("WARNING! Neither BUY nor SELL!")
+            o.action = "error"
+            return o
+
+        # CMP
+        try:
+            o.CMP = float(elements[2])
+        except ValueError:
+            o.action = "error"
+            return o
+
+        # TP
+        try:
+            o.TPs = [float(elements[4])]
+        except ValueError:
+            o.action = "error"
+            return o
+
+        # SL
+        try:
+            o.SL = [float(elements[6])]
+        except ValueError:
+            o.action = "error"
+            return o
+
+        return o
+
+    def parse_for_order_open_v2(self, o: Order, text: str) -> Order:
+        """Parse for order open v2.
+
+        usually in forex, very irregular in number of dots and spaces:
+        "Sell... Gbp/Cad....@1.69131... Target=1.68330... StopLoss=1.69907"
+        """
+        # replace any group of two or more dots with empty space
+        text = re.sub(r"\.{2,}", " ", text)
+        # print(text)
+        elements = text.split()
+        if elements[0] == "BUY":
+            o.action = "open"
+            o.type = "entry"
+            o.direction = "buy"
+        elif elements[0] == "SELL":
+            o.action = "open"
+            o.type = "entry"
+            o.direction = "sell"
+        else:
+            print("WARNING! Neither BUY nor SELL!")
+            o.action = "error"
+            return o
+
+        # symbol is at second position, but remove the / which exists for forex
+        o.symbol = get_symbol(elements[1].replace("/", ""))
+
+        # CMP is at third position, but remove the @ in front
+        try:
+            o.CMP = float(elements[2].replace("@", ""))
+        except ValueError:
+            o.action = "error"
+            return o
+
+        # TP is at fourth position, but remove the TARGET= in front
+        try:
+            o.TPs = [float(elements[3].replace("TARGET=", ""))]
+        except ValueError:
+            o.action = "error"
+            return o
+
+        # SL is at fifth position, but remove the STOPLOSS= in front
+        try:
+            o.SL = float(elements[4].replace("STOPLOSS=", ""))
+        except ValueError:
+            o.action = "error"
+            return o
+
         return o
 
     def parse_for_order_modify(self, o: Order, text: str) -> Order:
@@ -408,9 +548,7 @@ class Parse_ParamountInfoTech(Order):
         else:
             # good, there is only one candidate remaining for symbol
             word = symbol_candidates[0]
-            o.symbol = (
-                word if word not in dict_word_symbol.keys() else dict_word_symbol[word]
-            )
+            o.symbol = get_symbol(word)
         return o
 
     def parse_for_order_close(self, o: Order, text: str) -> Order:
@@ -461,4 +599,5 @@ class Parse_ParamountInfoTech(Order):
 
     def parse_for_order_announcement(self, o: Order, text: str) -> Order:
         """Parse for order announcement."""
+        o.action = "announcement"
         return o
