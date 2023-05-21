@@ -417,7 +417,7 @@ class Parse_ParamountInfoTech:
         text = text.replace("@", " ").replace(",", " ")
         # print(text)
         elements = text.split()
-        request_logger.info(f"elements={elements}.")
+        request_logger.debug(f"elements={elements}.")
         if elements[0] == "BUY" or elements[1] == "BUY":
             o.action = "open"
             o.type = "entry"
