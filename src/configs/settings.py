@@ -112,3 +112,5 @@ NUM_LATEST_MESSAGES_TO_READ = 5
 
 SAVE_SCREENSHOT = False
 SAVE_HTML = False
+
+FILE_ORDERS_LOG = "./output/orders/orders_01.log"

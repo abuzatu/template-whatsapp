@@ -3,6 +3,7 @@
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 import pandas as pd
+from pathlib import Path
 import re
 import time
 from typing import Dict, List
@@ -28,6 +29,7 @@ from configs.settings import (
     NUM_LATEST_MESSAGES_TO_READ,
     SAVE_SCREENSHOT,
     SAVE_HTML,
+    FILE_ORDERS_LOG,
 )
 
 
@@ -94,6 +96,25 @@ class ReadMessages:
         # but if I close the loop with control+C, we want the driver to quit cleanly
         # using a try-except
         try:
+            # check if file where we log the orders exists
+            if not Path(FILE_ORDERS_LOG).is_file():
+                # file does not exist
+                id_order = 0
+            else:
+                # file exists, let's open and count the lines
+                file = open(FILE_ORDERS_LOG, "r")
+                lines = file.readlines()
+                # print(len(lines))
+                last_line = lines[-1].rstrip("\n")
+                # print(f"last_line={last_line}")
+                padded_str = last_line.split(",")[0].replace("id=", "")
+                id_order = int(padded_str.lstrip("0"))
+                print(f"id_order={id_order}")
+                file.close()
+            # now open the file in append mode
+            # if file does not exist, it is recreated
+            file = open(FILE_ORDERS_LOG, "a")
+
             while True:
                 # increase the counter of the loop to keep track
                 counter += 1
@@ -150,7 +171,7 @@ class ReadMessages:
                         if counter <= NUM_FIRST_COUNTERS_TO_SKIP:
                             continue
                         actual_message = message.actual_message
-                        request_logger.info(
+                        request_logger.debug(
                             "Building an list of orders from the actual_message="
                             f"{actual_message}"
                         )
@@ -172,10 +193,15 @@ class ReadMessages:
                             request_logger.warning(
                                 f"contact{contact} not known, " "so can not build orders."
                             )
-                        request_logger.info("Showing orders built")
-                        for o in orders:
+                        request_logger.debug("Showing orders built")
+                        for i, o in enumerate(orders):
+                            id_order += 1
+                            o.set_id(id_order)
                             print(o)
+                            # append to the file
+                            file.write(o.__str__() + "\n")
                     request_logger.debug("End receive_messages()")
+                    file.flush()  # Flush the buffer to write the data after one contact
                     if counter % 1 == 0:
                         request_logger.debug(
                             f"End for contact={contact}, counter={counter}, "
@@ -187,6 +213,7 @@ class ReadMessages:
         except KeyboardInterrupt:
             request_logger.error("Ctrl+C was pressed, so stopping.")
         finally:
+            file.close()
             self.quit_driver()
 
     def search_box(self, contact: str) -> None:

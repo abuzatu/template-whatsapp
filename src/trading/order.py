@@ -36,9 +36,16 @@ class Order:
         self.author: Optional[str] = None  # author that gave the signal
         self.text: Optional[str] = None  # the text from which the order was produced
 
+    def set_id(self, id: int) -> None:
+        """Set id."""
+        self.id = id
+
     def __str__(self) -> str:
         """String representation."""
         return (
+            f"id={str(self.id).zfill(5)}, "
+            f'datetime={self.datetime.strftime("%Y-%m-%d %H:%M:%S")}, '
+            f'author="{self.author}", '
             f"action={self.action}, "
             f"type={self.type}, "
             f"direction={self.direction}, "
@@ -48,9 +55,6 @@ class Order:
             f"EPs={self.EPs}, "
             f"SL={self.SL}, "
             f"TPs={self.TPs}, "
-            f"id={str(self.id).zfill(5)}, "
-            f'datetime={self.datetime.strftime("%Y-%m-%d %H:%M:%S")}, '
-            f'author="{self.author}", '
             f'text="{self.text}", '
         )
 
