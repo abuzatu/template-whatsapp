@@ -58,3 +58,27 @@ Or in short coded with make
 ```
 make run_whatsapp_send_message_2
 ```
+To read whatsapp messages and parse them to create a trade order object and log them in `./output/order/orders_01.log`:
+```
+make read | tee a.log
+```
+This ` | tee a.log` allows the outputs both in the terminal, and in a text file.
+
+To run on a server after ssh to the server and continue to run on the server after I close the laptop or the ssh connection, use `tmux`:
+First ssh, then create a session
+```
+ssh username@server_address
+tmux new -s session_name
+```
+Launch the code on the server
+```
+make read | tee a.log
+```
+The detach by running `control+b`, and then `d`. 
+You can close laptop, or exit from ssh.
+The code will continue to run.
+You can log back and check that the log file is being updated. Or log back in to the `tmux` session.
+```
+ssh username@server_address
+tmux attach -t session_name
+```
