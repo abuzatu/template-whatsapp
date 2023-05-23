@@ -16,7 +16,7 @@ from selenium.webdriver.common.keys import Keys
 from cli.cli_send_message import CLI
 from utils.logger import request_logger
 from trading.parse_InvestorsWizard import Parse_InvestorsWizard
-from trading.parse_PipsGainer import Parse_PipsGainer
+from trading.parse_PipsGainer_v2 import Parse_PipsGainer_v2 as Pars_PipsGainer
 from trading.parse_ParamountInfoTech import Parse_ParamountInfoTech
 from whatsapp.message import Message
 from whatsapp.web_driver import Driver
