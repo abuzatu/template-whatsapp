@@ -181,6 +181,8 @@ class ReadMessages:
                             orders = Parse_PipsGainer().fit(actual_message)
                         elif contact == "Harsh Colleague Vinay":
                             orders = Parse_PipsGainer().fit(actual_message)
+                        elif contact == "Vinay Signals PipsGainer":
+                            orders = Parse_PipsGainer().fit(actual_message)
                         elif contact == "Akib Alam Paramount InfoSoft Fost InfoTech":
                             orders = Parse_ParamountInfoTech().fit(actual_message)
                         elif contact == "+44 7309 966580":
