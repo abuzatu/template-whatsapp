@@ -455,7 +455,7 @@ class Parse_ParamountInfoTech:
 
         # SL
         try:
-            o.SL = [float(elements[6])]
+            o.SL = float(elements[6])
         except ValueError:
             o.action = "error"
             return o
