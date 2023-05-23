@@ -82,3 +82,11 @@ You can log back and check that the log file is being updated. Or log back in to
 ssh username@server_address
 tmux attach -t session_name
 ```
+To list sessions
+```
+tmux list-sessions
+```
+To kill a particular ID,
+```
+tmux kill-session -t session_id
+```

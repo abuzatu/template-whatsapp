@@ -1,4 +1,7 @@
-"""Module to parse one message for PipsGainer (the central broadcast)."""
+"""Module to parse one message for PipsGainer_v1 (the central broadcast).
+
+As in fall 2022 to early 2023. Later it was a new format.
+"""
 
 from typing import List
 
@@ -6,7 +9,7 @@ from trading.order import Order
 from utils.logger import request_logger
 
 
-class Parse_PipsGainer:
+class Parse_PipsGainer_v1:
     """Parse a text message from PipsGainer (the central broadcast).
 
     One text message produces one order.
