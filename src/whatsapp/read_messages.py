@@ -126,7 +126,7 @@ class ReadMessages:
                         dict_contact_messages[contact] = []
                     # we can choose to print a . for each loop, to let us know
                     # how fast the loops are progressing
-                    if counter % 10 == 0:
+                    if counter % 2 == 0:
                         # pass
                         print(f"... {str(counter).zfill(3)}, {pd.Timestamp.now()}")
                     if counter % 1 == 0:
@@ -171,9 +171,13 @@ class ReadMessages:
                         if counter <= NUM_FIRST_COUNTERS_TO_SKIP:
                             continue
                         actual_message = message.actual_message
-                        request_logger.debug(
+                        request_logger.info(
                             "Building a list of orders from the actual_message="
-                            f"{actual_message}"
+                            f"{actual_message}, and in raw format {repr(actual_message)}."
+                        )
+                        print(
+                            "Building a list of orders from the actual_message="
+                            f"{actual_message}, and in raw format {repr(actual_message)}."
                         )
                         if contact == "Meisha Investors Wizard":
                             orders = Parse_InvestorsWizard().fit(actual_message)

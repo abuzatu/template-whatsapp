@@ -53,6 +53,7 @@ class Parse_ParamountInfoTech:
 
         # action: open order to trade v2
         self.examples_open_v2 = [
+            "Sell.... Nzd/Jpy...@85.217....Target=83.910... StopLoss=86.511 Sell..... Aud/Jpy.....@91.193...Target=90.424.... StopLoss=91.950 Sell.... Chf/Jpy.....@153.486..Target=152.674... StopLoss=154.256",  # noqa
             "Buy... US30...... @33565.... Target=33870... StopLoss=33296",
             """
             Sell..... Gbp/Aud...@1.86840..
@@ -349,8 +350,8 @@ class Parse_ParamountInfoTech:
         We split by that and then create a function that parses for one order.
         """
         text = text.upper()
-        # print("initial text")
-        # print(text)
+        print("initial text")
+        print(text)
 
         orders = []
         for text_one in text.split("\n\n"):

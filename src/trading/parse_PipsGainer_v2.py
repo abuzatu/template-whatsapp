@@ -217,11 +217,12 @@ class Parse_PipsGainer_v2:
             return o
 
         # CMP is at 17th position
-        try:
-            o.CMP = float(elements[16])
-        except ValueError:
-            o.action = "error"
-            return o
+        if len(elements) > 16:
+            try:
+                o.CMP = float(elements[16])
+            except ValueError:
+                o.action = "error"
+                return o
 
         return o
 
