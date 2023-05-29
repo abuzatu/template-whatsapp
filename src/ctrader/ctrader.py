@@ -24,7 +24,7 @@ class CTrader:
         client_id: int = 1,
         debug: bool = False,
     ):
-        """AI is creating summary for __init__.
+        """Init.
 
         Args:
             server ([str]): [an IP given by them]
@@ -492,8 +492,11 @@ class CTrader:
 
     def subscribe(self, *symbol):
         """Subscribe."""
+        print(f"A, symbol={symbol}")
         symbol = list(symbol)
+        print(f"B, symbol={symbol}")
         for symbols in symbol:
+            print(f"C, symbols={symbols}")
             self.fix.spot_market_request(symbols)
 
     def quote(self, symbol=None):
@@ -501,7 +504,11 @@ class CTrader:
         if symbol and symbol not in self.fix.spot_price_list:
             return "Symbol not Subscribed"
         elif symbol:
+            print(f"A symbol={symbol}")
             return self.fix.spot_price_list[symbol]
+        print("B return entire list")
+        print(type(self.fix.spot_price_list))
+        print(self.fix.spot_price_list)
         return self.fix.spot_price_list
 
     def order_list_callback(self, data: dict, price_data: dict, client_id: str):
