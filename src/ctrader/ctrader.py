@@ -7,6 +7,8 @@ import random
 from operator import itemgetter
 from .fix import FIX, Side, OrderType
 
+from typing import Any, Dict, List, Optional
+
 
 class CTrader:
     """Class that controls the CTrader account.
@@ -106,10 +108,20 @@ class CTrader:
             v_tp,
             v_type,
         )
-
         otype = actionType
         symbol = v_symbol[:6]
-        size = int(float(v_lots) * 100000)
+        factor_size = (
+            1
+            if symbol
+            in [
+                "US30",
+                "US500",
+                "USTEC",
+            ]
+            else 100_000
+        )
+        size = int(float(v_lots) * factor_size)
+        # print(f"otype={otype}, symbol={symbol}, size={size}")
         global ticket
         ticket = None
         client_id = str(self.client["_id"])
@@ -120,41 +132,66 @@ class CTrader:
                 command = "{0} {1} {2} {3} {4}".format(
                     otype, symbol, size, v_openprice, v_ticket
                 )
+                # print(
+                #    f"OPEN v_type>1={v_type}, command={command}, "
+                #    "should be open limit order"
+                # )
                 self.parse_command(command, client_id)
             else:
                 # abre posicao a mercado
                 command = "{0} {1} {2} {3}".format(otype, symbol, size, v_ticket)
+                # print(
+                #    f"OPEN v_type==0={v_type}, command={command}, "
+                #    "should be open market order"
+                # )
                 self.parse_command(command, client_id)
 
+                # print("A")
+                # print(f"v_ticket={v_ticket}")
+                time.sleep(4)
+                # ticket = self.fix.origin_to_pos_id[v_ticket]
+                # print("B")
+
                 if v_sl or v_tp:
+                    # if False:
+                    # print(f"We have SL or TP, SL={v_sl}, TP={v_tp}")
                     while True:
                         try:
                             ticket = self.fix.origin_to_pos_id[v_ticket]
+                            # time.sleep(1)
                             if ticket:  # Verifica se a variável ticket não está vazia
                                 break
                         except Exception as e:
                             logging.info(e)
                             continue
 
+                # print("B")
+
                 if ticket:
-                    if float(v_sl) > 0:
+                    # print(f"C, SL={v_sl}, TP={v_tp}")
+                    if v_sl and float(v_sl) > 0:
+                        # print(f"D, SL={v_sl}")
                         # abre posicao pendente SL
                         otype = "sell stop" if v_type == "0" else "buy stop"
                         command = "{0} {1} {2} {3} {4} {5}".format(
                             otype, symbol, size, v_sl, v_ticket, ticket
                         )
+                        # print(f"We have SL command={command}")
                         self.parse_command(command, client_id)
-                    if float(v_tp) > 0:
+                    if v_tp and float(v_tp) > 0:
+                        # print(f"D, TP={v_tp}")
                         # cancela ordens pendentes abertas de TP e SL
-                        ticket_orders = self.getOrdersIdByOriginId(v_ticket, client_id)
+                        ticket_orders = self.getOrdersIdByOriginId(v_ticket)
                         # abre posicao pendente TP
                         otype = "sell limit" if v_type == "0" else "buy limit"
                         command = "{0} {1} {2} {3} {4} {5}".format(
                             otype, symbol, size, v_tp, v_ticket, ticket
                         )
+                        # print(f"We have TP command={command}")
                         self.parse_command(command, client_id)
 
         elif v_action in ["CLOSED", "PCLOSED"]:
+            # print("closing action")
             if int(v_type) > 1:
                 # ORDEM
                 # cancela ordens pendentes
@@ -174,8 +211,15 @@ class CTrader:
 
         return v_ticket
 
-    def buy(self, symbol, volume, stoploss, takeprofit, price=0) -> str:
-        """summary for buy.
+    def buyMarket(
+        self,
+        symbol: str,
+        volume: float,
+        stoploss: Optional[float],
+        takeprofit: Optional[float],
+        price: Optional[float],
+    ) -> str:
+        """Summary for buy.
 
         Args:
             symbol ([str]): ["EURUSD"]
@@ -183,6 +227,7 @@ class CTrader:
             stoploss ([float]): [1.18]
             takeprofit ([float]): [1.19]
             price (int, optional): [on the price]. Defaults to 0.
+
         Returns:
             [int]: [order ID]
         """
@@ -199,7 +244,14 @@ class CTrader:
             None,
         )
 
-    def sell(self, symbol, volume, stoploss=0, takeprofit=9, price=0) -> str:
+    def sellMarket(
+        self,
+        symbol: str,
+        volume: float,
+        stoploss: Optional[float],
+        takeprofit: Optional[float],
+        price: Optional[float],
+    ) -> str:
         """Summary for sell.
 
         Args:
@@ -208,6 +260,7 @@ class CTrader:
             stoploss ([float]): [1.19]
             takeprofit ([float]): [1.18]
             price (int, optional): [on the price]. Defaults to 0.
+
         Returns:
             [int]: [Order ID]
         """
@@ -224,13 +277,21 @@ class CTrader:
             None,
         )
 
-    def buyLimit(self, symbol, volume, price=0) -> str:
+    def buyLimit(
+        self,
+        symbol: str,
+        volume: float,
+        stoploss: Optional[float],
+        takeprofit: Optional[float],
+        price: Optional[float],
+    ) -> str:
         """Summary for buy Limit.
 
         Args:
             symbol ([str]): ["EURUSD"]
             volume ([float]): [0.01]
             price ([float]): [1.8]. Defaults to 0.
+
         Returns:
             [int]: [order ID]
         """
@@ -240,20 +301,28 @@ class CTrader:
             2,
             "buy limit",
             volume,
-            None,
-            None,
+            stoploss,
+            takeprofit,
             price,
             None,
             None,
         )
 
-    def sellLimit(self, symbol, volume, price=0) -> str:
+    def sellLimit(
+        self,
+        symbol: str,
+        volume: float,
+        stoploss: Optional[float],
+        takeprofit: Optional[float],
+        price: Optional[float],
+    ) -> str:
         """Summary for sellLimit.
 
         Args:
             symbol ([str]): ["EURUSD"]
             volume ([float]): [0.01]
             price (int, optional): [1.22]. Defaults to 0.
+
         Returns:
             [type]: [description]
         """
@@ -263,20 +332,28 @@ class CTrader:
             3,
             "sell limit",
             volume,
-            None,
-            None,
+            stoploss,
+            takeprofit,
             price,
             None,
             None,
         )
 
-    def buyStop(self, symbol, volume, price=0) -> str:
+    def buyStop(
+        self,
+        symbol: str,
+        volume: float,
+        stoploss: Optional[float],
+        takeprofit: Optional[float],
+        price: Optional[float],
+    ) -> str:
         """Summary for buyStop.
 
         Args:
             symbol ([str]): ["EURUSD"]
             volume ([float]): [0.01]
             price (int, optional): [1.22]. Defaults to 0.
+
         Returns:
             [type]: [description]
         """
@@ -286,20 +363,28 @@ class CTrader:
             4,
             "buy stop",
             volume,
-            None,
-            None,
+            stoploss,
+            takeprofit,
             price,
             None,
             None,
         )
 
-    def sellStop(self, symbol, volume, price=0) -> str:
+    def sellStop(
+        self,
+        symbol: str,
+        volume: float,
+        stoploss: Optional[float],
+        takeprofit: Optional[float],
+        price: Optional[float],
+    ) -> str:
         """Summary for sellStop.
 
         Args:
             symbol ([str]): ["EURUSD"]
             volume ([float]): [0.01]
             price (int, optional): [1.22]. Defaults to 0.
+
         Returns:
             [type]: [description]
         """
@@ -309,21 +394,21 @@ class CTrader:
             5,
             "sell stop",
             volume,
-            None,
-            None,
+            stoploss,
+            takeprofit,
             price,
             None,
             None,
         )
 
-    def positionClosePartial(self, id, volume) -> str:
+    def positionClosePartial(self, id: str, volume: float) -> str:
         """Position close partial.
 
         What does the 5 argument do? It is not used in the main trade function.
         """
         return self.trade("", "PCLOSED", 0, "", volume, 0, 0, 0, 5, id)
 
-    def positionCloseById(self, id, amount) -> str:
+    def positionCloseById(self, id: str, amount: float) -> Optional[str]:
         """Position close by ID.
 
         What does the 5 argument do? It is not used in the main trade function.
@@ -336,7 +421,7 @@ class CTrader:
             pass
         return action
 
-    def orderCancelById(self, id) -> str:
+    def orderCancelById(self, id: str) -> Optional[str]:
         """Ordr cancel by ID.
 
         What does the 5 argument do? It is not used in the main trade function.
@@ -349,15 +434,15 @@ class CTrader:
             pass
         return action
 
-    def positions(self):
+    def positions(self) -> List[Dict[str, Any]]:
         """Get positions."""
         return json.loads(json.dumps(self.client["positions"]))
 
-    def orders(self):
+    def orders(self) -> List[Dict[str, Any]]:
         """Get orders."""
         return json.loads(json.dumps(self.client["orders"]))
 
-    def parse_command(self, command: str, client_id: str):
+    def parse_command(self, command: str, client_id: str) -> None:
         """Parse command."""
         parts = command.split(" ")
         logging.info(parts)
@@ -406,15 +491,17 @@ class CTrader:
             else:
                 self.fix.cancel_order(parts[1])
 
-    def float_format(self, fmt: str, num: float, force_sign=True):
-        """Float format."""
+    def float_format(self, fmt: str, num: float, force_sign: bool = True) -> str:
+        """Format a float as a string."""
         return max(
             ("{:+}" if force_sign else "{}").format(round(num, 6)),
             fmt.format(num),
             key=len,
         )
 
-    def position_list_callback(self, data: dict, price_data: dict, client_id: str):
+    def position_list_callback(
+        self, data: dict, price_data: dict, client_id: str
+    ) -> None:
         """Position list callback."""
         positions = []
         for i, kv in enumerate(data.items()):
@@ -469,12 +556,14 @@ class CTrader:
         self.client.update(positions=positions)
         logging.debug("client_id %s positions: %s", client_id, positions)
 
-    def getPositionIdByOriginId(self, posId: str, client_id: str):
+    def getPositionIdByOriginId(self, posId: str) -> Optional[str]:
         """Get PositionID by OriginID."""
         if posId in self.fix.origin_to_pos_id:
             return self.fix.position_list[self.fix.origin_to_pos_id[posId]]
+        else:
+            return None
 
-    def getOrdersIdByOriginId(self, ordId: str, client_id: str):
+    def getOrdersIdByOriginId(self, ordId: str) -> Optional[str]:
         """Get OrderID by OriginID."""
         if (
             ordId in self.fix.origin_to_ord_id
@@ -483,32 +572,30 @@ class CTrader:
         else:
             return None  # Retorne None ou outro valor padrão quando a chave não existir
 
-    def cancelOrdersByOriginId(self, clIdArr, client_id: str):
+    def cancelOrdersByOriginId(self, clIdArr: str) -> None:
         """Cancel order by OriginID."""
         if not clIdArr:
             return
         for clId in clIdArr:
             self.fix.cancel_order(clId)
 
-    def subscribe(self, *symbol):
+    def subscribe(self, symbols: List[str]) -> None:
         """Subscribe."""
-        print(f"A, symbol={symbol}")
-        symbol = list(symbol)
-        print(f"B, symbol={symbol}")
-        for symbols in symbol:
-            print(f"C, symbols={symbols}")
-            self.fix.spot_market_request(symbols)
+        # print(f"A, symbols={symbols}")
+        for symbol in symbols:
+            # print(f"B, symbol={symbol}")
+            self.fix.spot_market_request(symbol)
 
-    def quote(self, symbol=None):
+    def quote(self, symbol: Optional[str] = None) -> Dict[str, Dict[str, Any]]:
         """Quote."""
         if symbol and symbol not in self.fix.spot_price_list:
-            return "Symbol not Subscribed"
+            return f"Symbol {symbol} not Subscribed, so can not get price."
         elif symbol:
-            print(f"A symbol={symbol}")
+            # print(f"A symbol={symbol}")
             return self.fix.spot_price_list[symbol]
-        print("B return entire list")
-        print(type(self.fix.spot_price_list))
-        print(self.fix.spot_price_list)
+        # print("B return entire list")
+        # print(type(self.fix.spot_price_list))
+        # print(self.fix.spot_price_list)
         return self.fix.spot_price_list
 
     def order_list_callback(self, data: dict, price_data: dict, client_id: str):
@@ -576,15 +663,15 @@ class CTrader:
             "time": time.time(),
         }
 
-    def close_all(self):
+    def close_all(self) -> None:
         """Close all."""
         self.fix.close_all()
 
-    def cancel_all(self):
+    def cancel_all(self) -> None:
         """Cancel all."""
         self.fix.cancel_all()
 
-    def logout(self):
+    def logout(self) -> str:
         """Logout."""
         if self.isconnected():
             self.fix.logout()
@@ -593,6 +680,32 @@ class CTrader:
             logout = "Not logged in"
         return logout
 
-    def isconnected(self):
+    def isconnected(self) -> bool:
         """Is connected."""
         return self.fix.logged
+
+    """My functions to be really simple.
+    
+    Buy and sell at market without SL, TP, price.
+    And close fully (entire volume) of all positions of one symbol.
+    """
+
+    def buy(self, symbol: str, volume: float) -> None:
+        """Market order to buy without SL, TP, price."""
+        id = self.buyMarket(symbol, volume, stoploss=None, takeprofit=None, price=None)
+        logging.info(f"Position: {id} of market buy of {symbol} in {volume} lots.")
+
+    def sell(self, symbol: str, volume: float) -> None:
+        """Market order to sell without SL, TP, price."""
+        id = self.sellMarket(symbol, volume, stoploss=None, takeprofit=None, price=None)
+        logging.info(f"Position: {id} of market sell of {symbol} in {volume} lots.")
+
+    def close(self, symbol: str) -> None:
+        """Close fully all the positions of a given symbol."""
+        for position in self.positions():
+            if position["name"] != symbol:
+                continue
+            # if here close the entire position
+            # Close position by id of all amount
+            # by giving it the entire amount the position
+            self.positionCloseById(position["pos_id"], position["amount"])

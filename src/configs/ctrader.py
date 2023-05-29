@@ -8,4 +8,4 @@ PASSWORD = "1234567890"
 CURRENCY = "USD"
 # set by us internally
 CLIENT_ID = 1
-DEBUG = True
+DEBUG = False

@@ -3,7 +3,7 @@
 Starting with the code of this Brazilian project, that was updated even 2 weeks ago.
 https://github.com/ejtraderLabs/ejtraderCT/tree/master/ejtraderCT/api
 
-It has implemented already a FIX protocol from scratch, 
+It has implemented already a FIX protocol from scratch,
 and has built all the sorts of actions needed.
 
 But some things it has removed (modify trades) - to add back.

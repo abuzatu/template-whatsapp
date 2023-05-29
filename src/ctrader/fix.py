@@ -386,7 +386,7 @@ class FIX:
 
     def process_test(self, msg: Message) -> None:
         """Process test."""
-        print(f"process_test, msg={msg}")
+        # print(f"process_test, msg={msg}")
         if msg[Field.SenderSubID] == "QUOTE":
             self.qheartbeat(msg[Field.TestReqID])
         elif msg[Field.SenderSubID] == "TRADE":
@@ -394,14 +394,14 @@ class FIX:
 
     def process_logout(self, msg: Message) -> None:
         """Process logout."""
-        print(f"process_logout, msg={msg}")
+        # print(f"process_logout, msg={msg}")
         if not msg[Field.Text]:
             self.logged = False
         self.update_fix_status(self.client_id, self.logged)
 
     def process_exec_report(self, msg: Message) -> None:
         """Process exec report."""
-        print(f"process_exec_report, msg={msg}")
+        # print(f"process_exec_report, msg={msg}")
         if msg[Field.ExecType] == "F":
             self.position_list = {}
             self.position_request()
@@ -447,7 +447,7 @@ class FIX:
 
     def process_logon(self, msg: Message) -> None:
         """Process logon."""
-        print(f"process_logon, msg={msg}")
+        # print(f"process_logon, msg={msg}")
         if msg[Field.SenderSubID] == "QUOTE":
             logging.info("Quote logged on")
             self.ping_qworker_thread = threading.Thread(
@@ -463,7 +463,7 @@ class FIX:
             self.ping_tworker_thread.start()
 
     def process_market_data(self, msg: Message) -> None:
-        print(f"process_market_data, msg={msg}")
+        # print(f"process_market_data, msg={msg}")
         """Process market data."""
         name = self.sec_id_table[int(msg[Field.Symbol])]["name"]
         digits = self.sec_id_table[int(msg[Field.Symbol])]["digits"]
@@ -710,7 +710,7 @@ class FIX:
         msg[Field.NoRelatedSym] = 1
         msg[Field.Symbol] = self.sec_name_table[symbol]["id"]
         self.spot_request_list.add(symbol)
-        print(f"msg={msg}")
+        # print(f"msg={msg}")
         self.send_message(msg)
 
     def position_request(self) -> None:
