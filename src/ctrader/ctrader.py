@@ -673,9 +673,10 @@ class CTrader:
 
     def logout(self) -> str:
         """Logout."""
-        if self.isconnected():
+        while self.isconnected():
             self.fix.logout()
             logout = "Logged out"
+            time.sleep(1)
         else:
             logout = "Not logged in"
         return logout
@@ -708,4 +709,5 @@ class CTrader:
             # if here close the entire position
             # Close position by id of all amount
             # by giving it the entire amount the position
+            print(f"Closing {position}")
             self.positionCloseById(position["pos_id"], position["amount"])
