@@ -1,4 +1,5 @@
-# from locale import currency
+"""Module for CTrader for both quotes and trades."""
+
 import logging
 import json
 import time
@@ -7,26 +8,32 @@ from operator import itemgetter
 from .fix import FIX, Side, OrderType
 
 
-class Ctrader:
+class CTrader:
+    """Class that controls the CTrader account.
+
+    On one side getting quotes.
+    On the order seeing/seeting/modifying/closing orders and positions.
+    """
+
     def __init__(
         self,
-        server=None,
-        account=None,
-        password=None,
-        currency="EUR",
-        client_id=1,
-        spread=0.00005,
-        debug=False,
+        server: str,
+        account: str,
+        password: str,
+        currency: str,
+        client_id: int = 1,
+        debug: bool = False,
     ):
-        """AI is creating summary for __init__
+        """AI is creating summary for __init__.
 
         Args:
-            server ([str]): [example h8.p.c-trader.cn]
+            server ([str]): [an IP given by them]
             account ([str]): [live.icmarkets.1104926 or demo.icmarkets.1104926]
-            client_id ([str]):[example 1 or trader-1 its comment on position label]
-            spread ([int]): [example 0.00010 default 0.00005]
             password ([str]): [example 12345678 need to setup
             when you create api on ctrader platform]
+            currency ([str]): "EUR" or "USD"
+            client_id ([str]):[example 1 or trader-1 its comment on position label]
+            debug ([bool]): if true or false to add more logging info.
         """
         if debug:
             logging.getLogger().setLevel(logging.INFO)
@@ -69,7 +76,8 @@ class Ctrader:
         price,
         deviation,
         id,
-    ):
+    ) -> str:
+        """Trade."""
         v_action = action
         v_symbol = symbol
         v_ticket = (
@@ -85,7 +93,10 @@ class Ctrader:
         v_tp = takeprofit
 
         logging.info(
-            "Action: %s, Symbol: %s, Lots: %s, Ticket: %s, price: %s, takeprofit: %s, stoploss: %s, type: %s",
+            (
+                "Action: %s, Symbol: %s, Lots: %s, Ticket: %s, price: %s, "
+                "takeprofit: %s, stoploss: %s, type: %s"
+            ),
             v_action,
             v_symbol,
             v_lots,
@@ -163,8 +174,8 @@ class Ctrader:
 
         return v_ticket
 
-    def buy(self, symbol, volume, stoploss, takeprofit, price=0):
-        """summary for buy
+    def buy(self, symbol, volume, stoploss, takeprofit, price=0) -> str:
+        """summary for buy.
 
         Args:
             symbol ([str]): ["EURUSD"]
@@ -188,8 +199,8 @@ class Ctrader:
             None,
         )
 
-    def sell(self, symbol, volume, stoploss=0, takeprofit=9, price=0):
-        """summary for sell
+    def sell(self, symbol, volume, stoploss=0, takeprofit=9, price=0) -> str:
+        """Summary for sell.
 
         Args:
             symbol ([str]): ["EURUSD"]
@@ -213,8 +224,8 @@ class Ctrader:
             None,
         )
 
-    def buyLimit(self, symbol, volume, price=0):
-        """summary for buy Limit
+    def buyLimit(self, symbol, volume, price=0) -> str:
+        """Summary for buy Limit.
 
         Args:
             symbol ([str]): ["EURUSD"]
@@ -236,8 +247,8 @@ class Ctrader:
             None,
         )
 
-    def sellLimit(self, symbol, volume, price=0):
-        """summary for sellLimit
+    def sellLimit(self, symbol, volume, price=0) -> str:
+        """Summary for sellLimit.
 
         Args:
             symbol ([str]): ["EURUSD"]
@@ -259,8 +270,8 @@ class Ctrader:
             None,
         )
 
-    def buyStop(self, symbol, volume, price=0):
-        """summary for buyStop
+    def buyStop(self, symbol, volume, price=0) -> str:
+        """Summary for buyStop.
 
         Args:
             symbol ([str]): ["EURUSD"]
@@ -282,8 +293,8 @@ class Ctrader:
             None,
         )
 
-    def sellStop(self, symbol, volume, price=0):
-        """summary for sellStop
+    def sellStop(self, symbol, volume, price=0) -> str:
+        """Summary for sellStop.
 
         Args:
             symbol ([str]): ["EURUSD"]
@@ -305,10 +316,18 @@ class Ctrader:
             None,
         )
 
-    def positionClosePartial(self, id, volume):
+    def positionClosePartial(self, id, volume) -> str:
+        """Position close partial.
+
+        What does the 5 argument do? It is not used in the main trade function.
+        """
         return self.trade("", "PCLOSED", 0, "", volume, 0, 0, 0, 5, id)
 
-    def positionCloseById(self, id, amount):
+    def positionCloseById(self, id, amount) -> str:
+        """Position close by ID.
+
+        What does the 5 argument do? It is not used in the main trade function.
+        """
         try:
             action = self.trade("", "CLOSED", 0, "", amount / 100000, 0, 0, 0, 5, id)
         except Exception as e:
@@ -317,7 +336,11 @@ class Ctrader:
             pass
         return action
 
-    def orderCancelById(self, id):
+    def orderCancelById(self, id) -> str:
+        """Ordr cancel by ID.
+
+        What does the 5 argument do? It is not used in the main trade function.
+        """
         try:
             action = self.trade("", "CLOSED", 2, "", 0, 0, 0, 0, 5, id)
         except Exception as e:
@@ -327,12 +350,15 @@ class Ctrader:
         return action
 
     def positions(self):
+        """Get positions."""
         return json.loads(json.dumps(self.client["positions"]))
 
     def orders(self):
+        """Get orders."""
         return json.loads(json.dumps(self.client["orders"]))
 
     def parse_command(self, command: str, client_id: str):
+        """Parse command."""
         parts = command.split(" ")
         logging.info(parts)
         logging.info(f"Command: {command} ")
@@ -381,6 +407,7 @@ class Ctrader:
                 self.fix.cancel_order(parts[1])
 
     def float_format(self, fmt: str, num: float, force_sign=True):
+        """Float format."""
         return max(
             ("{:+}" if force_sign else "{}").format(round(num, 6)),
             fmt.format(num),
@@ -388,6 +415,7 @@ class Ctrader:
         )
 
     def position_list_callback(self, data: dict, price_data: dict, client_id: str):
+        """Position list callback."""
         positions = []
         for i, kv in enumerate(data.items()):
             pos_id = kv[0]
@@ -442,10 +470,12 @@ class Ctrader:
         logging.debug("client_id %s positions: %s", client_id, positions)
 
     def getPositionIdByOriginId(self, posId: str, client_id: str):
+        """Get PositionID by OriginID."""
         if posId in self.fix.origin_to_pos_id:
             return self.fix.position_list[self.fix.origin_to_pos_id[posId]]
 
     def getOrdersIdByOriginId(self, ordId: str, client_id: str):
+        """Get OrderID by OriginID."""
         if (
             ordId in self.fix.origin_to_ord_id
         ):  # Verifique se a chave existe antes de acessá-la
@@ -454,17 +484,20 @@ class Ctrader:
             return None  # Retorne None ou outro valor padrão quando a chave não existir
 
     def cancelOrdersByOriginId(self, clIdArr, client_id: str):
+        """Cancel order by OriginID."""
         if not clIdArr:
             return
         for clId in clIdArr:
             self.fix.cancel_order(clId)
 
     def subscribe(self, *symbol):
+        """Subscribe."""
         symbol = list(symbol)
         for symbols in symbol:
             self.fix.spot_market_request(symbols)
 
     def quote(self, symbol=None):
+        """Quote."""
         if symbol and symbol not in self.fix.spot_price_list:
             return "Symbol not Subscribed"
         elif symbol:
@@ -472,6 +505,7 @@ class Ctrader:
         return self.fix.spot_price_list
 
     def order_list_callback(self, data: dict, price_data: dict, client_id: str):
+        """Ordr list callback."""
         orders = []
         for i, kv in enumerate(data.items()):
             ord_id = kv[0]
@@ -512,6 +546,7 @@ class Ctrader:
         logging.debug("client_id %s orders: %s", client_id, orders)
 
     def quote_callback(self, name: str, digits: int, data: dict):
+        """Quote callback."""
         if len(data) == 0:
             return
         ask = []
@@ -535,12 +570,15 @@ class Ctrader:
         }
 
     def close_all(self):
+        """Close all."""
         self.fix.close_all()
 
     def cancel_all(self):
+        """Cancel all."""
         self.fix.cancel_all()
 
     def logout(self):
+        """Logout."""
         if self.isconnected():
             self.fix.logout()
             logout = "Logged out"
@@ -549,4 +587,5 @@ class Ctrader:
         return logout
 
     def isconnected(self):
+        """Is connected."""
         return self.fix.logged
