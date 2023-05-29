@@ -1,15 +1,23 @@
-import logging
-import re
-import threading
+"""Module to implement the FIX protocol."""
+
+# python
 from datetime import datetime
-import time
 from enum import IntEnum, Enum
-import socket
+import logging
 from pprint import pformat
+import re
+import socket
+import time
+import threading
+from typing import Any, Dict, List, Optional, Tuple
+
+# our modules
 from .buffer import Buffer
 
 
 class Field(IntEnum):
+    """Class Field."""
+
     AvgPx = 6
     BeginSeqNo = 7
     BeginString = 8
@@ -17,7 +25,7 @@ class Field(IntEnum):
     CheckSum = 10
     ClOrdId = 11
     CumQty = 14
-    OrdQty = 32  # nao tem na DOC
+    OrdQty = 32
     MsgSeqNum = 34
     MsgType = 35
     OrderID = 37
@@ -96,32 +104,50 @@ class Field(IntEnum):
 
 
 class SubID(Enum):
+    """Class SubID."""
+
     QUOTE = "QUOTE"
     TRADE = "TRADE"
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Str."""
         return self.value
 
 
 class Side(IntEnum):
+    """Side."""
+
     Buy = 1
     Sell = 2
 
 
 class OrderType(IntEnum):
+    """Order Type."""
+
     Market = 1
     Limit = 2
     Stop = 3
 
 
-def get_time():
+def get_time() -> str:
+    """Get current time as a string."""
     return datetime.utcnow().strftime("%Y%m%d-%H:%M:%S")
 
 
 class FIX:
+    """Class FIX."""
+
     class Message:
-        def __init__(self, sub: SubID = None, msg_type: str = None, parent=None):
-            self.fields = []
+        """Class Message."""
+
+        def __init__(
+            self,
+            sub: Optional[SubID] = None,
+            msg_type: Optional[str] = None,
+            parent: Optional[Any] = None,
+        ) -> None:
+            """Init."""
+            self.fields: List[Tuple[Field, Any]] = []
             if parent:
                 self.origin = True
                 self.fields.append((Field.BeginString, "FIX.4.4"))
@@ -143,19 +169,27 @@ class FIX:
             else:
                 self.origin = False
 
-        def __getitem__(self, item):
+        def __getitem__(self, item: int) -> Any:
+            """Get ite if found in the list of fields."""
             for k, v in self.fields:
                 if k == item:
                     return v
             return None
 
-        def __setitem__(self, key, value):
+        def __setitem__(self, key: Field, value: Any) -> None:
+            """Set item by appending to the list of fields."""
             self.fields.append((key, value))
 
-        def get_repeating_groups(self, count_key, repeating_start, repeating_end=None):
+        def get_repeating_groups(
+            self,
+            count_key: int,
+            repeating_start: int,
+            repeating_end: Optional[int] = None,
+        ) -> List[Dict[int, Any]]:
+            """Get repeating groups."""
             count = None
-            result = []
-            item = {}
+            result: List[Any] = []
+            item: Dict[int, Any] = {}
             for k, v in self.fields[8:]:
                 if count == 0:
                     return result
@@ -171,7 +205,8 @@ class FIX:
             result.append(item)
             return result
 
-        def __bytes__(self):
+        def __bytes__(self) -> bytes:
+            """Get bytes."""
             data = bytearray()
             for k, v in self.fields:
                 data.extend(b"%b=%b\x01" % (str(k.value).encode(), str(v).encode()))
@@ -181,7 +216,8 @@ class FIX:
                 data.extend(b"10=%03d\x01" % cksm)
             return bytes(data)
 
-        def __str__(self):
+        def __str__(self) -> str:
+            """Get string."""
             data = ""
             for k, v in self.fields:
                 data += "%s=%s|" % (str(k.value), str(v))
@@ -191,7 +227,8 @@ class FIX:
                 data += "10=%03d|" % cksm
             return data
 
-        def __repr__(self):
+        def __repr__(self) -> str:
+            """Retrun representation to print nicely as a string."""
             return pformat([(k.name, v) for k, v in self.fields])
 
     def __init__(
@@ -205,19 +242,24 @@ class FIX:
         position_list_callback,
         order_list_callback,
         update_fix_status=None,
-    ):
+    ) -> None:
+        """Init of class FIX."""
         try:
+            # quotes
             self.qstream = Buffer()
             self.qs = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.qs.connect((server, 5201))
+            # trades
             self.tstream = Buffer()
             self.ts = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.ts.connect((server, 5202))
+            # common to both quotes and trades
             self.broker = broker
             self.login = login
             self.password = password
             self.currency = currency
             self.client_id = client_id
+            #
             self.qseq = 1
             self.tseq = 1
             self.qtest_seq = 1
@@ -228,8 +270,8 @@ class FIX:
             self.qworker_thread.start()
             self.tworker_thread = threading.Thread(target=self.tworker)
             self.tworker_thread.start()
-            self.ping_qworker_thread = None
-            self.ping_tworker_thread = None
+            self.ping_qworker_thread: Optional[threading.Thread] = None
+            self.ping_tworker_thread: Optional[threading.Thread] = None
             self.sec_list_callback = None
             self.market_callback = None
             self.sec_id_table = {}
@@ -256,7 +298,8 @@ class FIX:
             # Code to handle the exception
             logging.error(f"{e}")
 
-    def qworker(self):
+    def qworker(self) -> None:
+        """Quote worker."""
         while True:
             try:
                 data = self.qs.recv(65535)
@@ -273,7 +316,8 @@ class FIX:
                 logging.info(f"Market is Close or Disconnected {e}")
                 break
 
-    def tworker(self):
+    def tworker(self) -> None:
+        """Trade worker."""
         while True:
             try:
                 data = self.ts.recv(65535)
@@ -290,7 +334,8 @@ class FIX:
                 logging.info(f"Market is Close or Logged out {e}")
                 break
 
-    def parse_quote_message(self):
+    def parse_quote_message(self) -> None:
+        """Parse quote message."""
         while len(self.qstream) > 0:
             match = re.search(rb"10=\d{3}\x01", self.qstream.peek(self.qstream.count()))
             if match:
@@ -304,7 +349,8 @@ class FIX:
             else:
                 break
 
-    def parse_trade_message(self):
+    def parse_trade_message(self) -> None:
+        """Parse trade message."""
         while len(self.tstream) > 0:
             match = re.search(rb"10=\d{3}\x01", self.tstream.peek(self.tstream.count()))
             if match:
@@ -318,35 +364,41 @@ class FIX:
             else:
                 break
 
-    def ping_qworker(self, interval: int):
+    def ping_qworker(self, interval: int) -> None:
+        """Ping quote worker."""
         while True:
             if self.qs._closed:
                 break
             self.qheartbeat()
             time.sleep(interval)
 
-    def ping_tworker(self, interval: int):
+    def ping_tworker(self, interval: int) -> None:
+        """Ping trade worker."""
         while True:
             if self.ts._closed:
                 break
             self.theartbeat()
             time.sleep(interval)
 
-    def process_ping(self, msg):
+    def process_ping(self, msg: str) -> None:
+        """Process ping."""
         pass
 
-    def process_test(self, msg):
+    def process_test(self, msg: Message) -> None:
+        """Process test."""
         if msg[Field.SenderSubID] == "QUOTE":
             self.qheartbeat(msg[Field.TestReqID])
         elif msg[Field.SenderSubID] == "TRADE":
             self.theartbeat(msg[Field.TestReqID])
 
-    def process_logout(self, msg):
+    def process_logout(self, msg: Message) -> None:
+        """Process logout."""
         if not msg[Field.Text]:
             self.logged = False
         self.update_fix_status(self.client_id, self.logged)
 
-    def process_exec_report(self, msg):
+    def process_exec_report(self, msg: Message) -> None:
+        """Process exec report."""
         if msg[Field.ExecType] == "F":
             self.position_list = {}
             self.position_request()
@@ -390,7 +442,8 @@ class FIX:
                 self.order_list, self.spot_price_list, self.client_id
             )
 
-    def process_logon(self, msg):
+    def process_logon(self, msg: Message) -> None:
+        """Process logon."""
         if msg[Field.SenderSubID] == "QUOTE":
             logging.info("Quote logged on")
             self.ping_qworker_thread = threading.Thread(
@@ -405,7 +458,8 @@ class FIX:
             )
             self.ping_tworker_thread.start()
 
-    def process_market_data(self, msg: Message):
+    def process_market_data(self, msg: Message) -> None:
+        """Process market data."""
         name = self.sec_id_table[int(msg[Field.Symbol])]["name"]
         digits = self.sec_id_table[int(msg[Field.Symbol])]["digits"]
         entries = msg.get_repeating_groups(Field.NoMDEntries, Field.MDEntryType)
@@ -434,7 +488,8 @@ class FIX:
         # logging.debug(pformat(msg))
         self.market_callback(name, digits, self.market_data[name])
 
-    def process_market_incr_data(self, msg: Message):
+    def process_market_incr_data(self, msg: Message) -> None:
+        """Process market incr data."""
         name = self.sec_id_table[int(msg[Field.Symbol])]["name"]
         digits = self.sec_id_table[int(msg[Field.Symbol])]["digits"]
         entries = msg.get_repeating_groups(Field.NoMDEntries, Field.MDUpdateAction)
@@ -451,7 +506,8 @@ class FIX:
         # logging.debug(pformat(msg))
         self.market_callback(name, digits, self.market_data[name])
 
-    def process_sec_list(self, msg):
+    def process_sec_list(self, msg: Message) -> None:
+        """Process sec list."""
         sec_list = msg.get_repeating_groups(Field.NoRelatedSym, Field.Symbol)
         for symbol in sec_list:
             self.sec_id_table[int(symbol[Field.Symbol])] = {
@@ -469,6 +525,7 @@ class FIX:
         self.sec_list_evt.set()
 
     def get_origin_from_pos_id(self, pos_id):
+        """Get origin from pos_id."""
         keys = list(self.origin_to_pos_id.keys())
         values = list(self.origin_to_pos_id.values())
         if pos_id in values:
@@ -476,7 +533,8 @@ class FIX:
         else:
             return None
 
-    def process_position_list(self, msg):
+    def process_position_list(self, msg: Message) -> None:
+        """Process position list."""
         if msg[Field.PosReqResult] == "2":
             return
         name = self.sec_id_table[int(msg[Field.Symbol])]["name"]
@@ -507,7 +565,8 @@ class FIX:
             self.position_list, self.spot_price_list, self.client_id
         )
 
-    def process_reject(self, msg):
+    def process_reject(self, msg: Message) -> None:
+        """Process reject."""
         checkOrders = msg[Field.Text].split(":")[1]
         if checkOrders == "no orders found":
             logging.info("No Orders")
@@ -529,11 +588,13 @@ class FIX:
         "AP": process_position_list,
     }
 
-    def process_message(self, msg: Message):
+    def process_message(self, msg: Message) -> None:
+        """Process message."""
         msg_type = msg[Field.MsgType]
         FIX.message_dispatch[msg_type](self, msg)
 
-    def send_message(self, msg: Message):
+    def send_message(self, msg: Message) -> None:
+        """Send message."""
         if msg[Field.TargetSubID] == SubID.QUOTE:
             try:
                 self.qs.send(bytes(msg))
@@ -547,23 +608,27 @@ class FIX:
                 logging.debug("\033[96mSEND >>> %s\033[0m" % msg)
             except Exception as e:
                 logging.debug(
-                    f"TRADE send error: {e} Closing connection. client_id:{self.client_id}"
+                    f"TRADE send error: {e} Closing connection. "
+                    f"client_id:{self.client_id}"
                 )
                 self.ts.close()
 
-    def qheartbeat(self, test_id: int = None):
+    def qheartbeat(self, test_id: Optional[int] = None) -> None:
+        """Quote heartbeat."""
         msg = FIX.Message(SubID.QUOTE, "0", self)
         if test_id:
             msg[Field.TestReqID] = test_id
         self.send_message(msg)
 
-    def theartbeat(self, test_id: int = None):
+    def theartbeat(self, test_id: Optional[int] = None) -> None:
+        """Trade heartbeat."""
         msg = FIX.Message(SubID.TRADE, "0", self)
         if test_id:
             msg[Field.TestReqID] = test_id
         self.send_message(msg)
 
-    def test(self):
+    def test(self) -> None:
+        """Test."""
         msg = FIX.Message(SubID.QUOTE, "1", self)
         msg[Field.TestReqID] = self.qtest_seq
         self.qtest_seq += 1
@@ -574,7 +639,8 @@ class FIX:
         self.ttest_seq += 1
         self.send_message(msg)
 
-    def logon(self):
+    def logon(self) -> None:
+        """Logon."""
         msg = FIX.Message(SubID.QUOTE, "A", self)
         msg[Field.EncryptMethod] = 0
         msg[Field.HeartBtInt] = 30
@@ -588,13 +654,15 @@ class FIX:
         msg[Field.Password] = self.password
         self.send_message(msg)
 
-    def logout(self):
+    def logout(self) -> None:
+        """Logout."""
         msg = FIX.Message(SubID.QUOTE, "5", self)
         self.send_message(msg)
         msg = FIX.Message(SubID.TRADE, "5", self)
         self.send_message(msg)
 
-    def market_request(self, subid, symbol, callback):
+    def market_request(self, subid, symbol: str, callback) -> None:
+        """Market request."""
         if symbol not in self.sec_name_table.keys():
             logging.error("Symbol %s not found!" % symbol)
             return
@@ -625,7 +693,8 @@ class FIX:
         self.send_message(msg)
         self.market_seq += 1
 
-    def spot_market_request(self, symbol):
+    def spot_market_request(self, symbol: str) -> None:
+        """Spot market request."""
         msg = FIX.Message(SubID.QUOTE, "V", self)
         msg[Field.MDReqID] = self.client_id
         msg[Field.SubscriptionRequestType] = 1
@@ -638,18 +707,21 @@ class FIX:
         self.spot_request_list.add(symbol)
         self.send_message(msg)
 
-    def position_request(self):
+    def position_request(self) -> None:
+        """Position request."""
         msg = FIX.Message(SubID.TRADE, "AN", self)
         msg[Field.PosReqID] = self.client_id
         self.send_message(msg)
 
-    def order_request(self):
+    def order_request(self) -> None:
+        """Order request."""
         msg = FIX.Message(SubID.TRADE, "AF", self)
         msg[Field.MassStatusReqID] = self.client_id
         msg[Field.MassStatusReqType] = 7
         self.send_message(msg)
 
-    def sec_list(self, callback=None):
+    def sec_list(self, callback=None) -> None:
+        """Sec list."""
         msg = FIX.Message(SubID.QUOTE, "x", self)
         msg[Field.SecurityReqID] = self.client_id
         msg[Field.SecurityListRequestType] = 0
@@ -657,8 +729,9 @@ class FIX:
         self.send_message(msg)
 
     def new_market_order(
-        self, symbol, side: Side, size: float, originId=None, pos_id=None
-    ):
+        self, symbol: str, side: Side, size: float, originId=None, pos_id=None
+    ) -> None:
+        """New market order."""
         logging.info(f"error ORIGINAL ID: {originId}")
         logging.info(f"error POS ID: {pos_id}")
         if symbol not in self.sec_name_table:
@@ -671,13 +744,18 @@ class FIX:
         msg[Field.TransactTime] = get_time()
         msg[Field.OrderQty] = size
         msg[Field.OrdType] = OrderType.Market.value
-        msg[Field.Designation] = f"EjtraderCT ClientID: {self.client_id}"
+        msg[Field.Designation] = f"ClientID: {self.client_id}"
         if pos_id:
             msg[Field.PosMaintRptID] = pos_id
 
         self.send_message(msg)
 
-    def close_position(self, pos_id: str, lots):
+    def close_position(self, pos_id: str, lots: float) -> None:
+        """Close position, fully or partially if lots is given.
+
+        TODO: to check that lots is smaller than the full position,
+        otherwise not sure what it does, to check in real life.
+        """
         if pos_id not in self.position_list:
             return
 
@@ -693,13 +771,9 @@ class FIX:
 
         msg = FIX.Message(SubID.TRADE, "D", self)
         msg[Field.ClOrdId] = get_time()
-        msg[Field.Symbol] = self.sec_name_table[self.position_list[pos_id]["name"]][
-            "id"
-        ]
+        msg[Field.Symbol] = self.sec_name_table[self.position_list[pos_id]["name"]]["id"]
         msg[Field.Side] = (
-            Side.Sell.value
-            if self.position_list[pos_id]["long"] > 0
-            else Side.Buy.value
+            Side.Sell.value if self.position_list[pos_id]["long"] > 0 else Side.Buy.value
         )
         msg[Field.TransactTime] = get_time()
         msg[Field.OrderQty] = (
@@ -713,7 +787,8 @@ class FIX:
         msg[Field.OrdType] = OrderType.Market.value
         self.send_message(msg)
 
-    def close_all(self):
+    def close_all(self) -> None:
+        """Close all positions."""
         for position in self.position_list:
             self.close_position(position, None)
 
@@ -726,7 +801,8 @@ class FIX:
         price: float,
         originId=None,
         pos_id=None,
-    ):
+    ) -> None:
+        """New limit order, or new stop order."""
         logging.info(f"error ORIGINAL ID: {originId}")
         logging.info(f"error POS ID: {pos_id}")
         if symbol not in self.sec_name_table:
@@ -747,7 +823,8 @@ class FIX:
             msg[Field.PosMaintRptID] = pos_id
         self.send_message(msg)
 
-    def cancel_order(self, clid: str):
+    def cancel_order(self, clid: str) -> None:
+        """Cancel order."""
         # remove referencia ao server ord_id da tabela de-para
         for o, p in self.origin_to_ord_id.items():
             if clid in p:
@@ -762,6 +839,7 @@ class FIX:
         msg[Field.ClOrdId] = clid
         self.send_message(msg)
 
-    def cancel_all(self):
+    def cancel_all(self) -> None:
+        """Cancel all orders."""
         for order in self.order_list:
             self.cancel_order(order)
