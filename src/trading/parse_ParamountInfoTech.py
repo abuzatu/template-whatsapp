@@ -358,7 +358,8 @@ class Parse_ParamountInfoTech:
 
         orders = []
 
-        if "BUY" in text or "SELL" in text:
+        if text.startswith("BUY") or text.startswith("SELL"):
+            # if "BUY" in text or "SELL" in text:
             # replace any group of two or more dots with empty space
             # needed for the FOREX style, not affecting the gold style
             text = re.sub(r"\.{2,}", " ", text)
