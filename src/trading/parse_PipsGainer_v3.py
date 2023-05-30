@@ -138,7 +138,7 @@ class Parse_PipsGainer_v3:
             o = self.parse_for_order_announcement(o, text)
         elif word_list[0] in ["BUY", "SELL", "CLOSE"]:
             # the asset is in position 1
-            o.symbol = word_list[1]
+            o.symbol = get_symbol(word_list[1])
             o.type = "market"
             if word_list[0] == "BUY":
                 o.action = "open"
@@ -154,7 +154,7 @@ class Parse_PipsGainer_v3:
                 o = self.parse_for_order_announcement(o, text)
         elif word_list[1] in ["BUY", "SELL", "CLOSE"]:
             # the asset is in position 0
-            o.symbol = word_list[0]
+            o.symbol = get_symbol(word_list[0])
             if word_list[1] == "BUY":
                 o.action = "open"
                 o.type = "entry"
