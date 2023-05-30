@@ -110,17 +110,20 @@ class CTrader:
         )
         otype = actionType
         symbol = v_symbol[:6]
-        factor_size = (
-            1
-            if symbol
-            in [
-                "US30",
-                "US500",
-                "USTEC",
-            ]
-            else 100_000
-        )
-        size = int(float(v_lots) * factor_size)
+        # set lot size
+        # TODO: to move to a config
+        if symbol in [
+            "US30",
+            "US500",
+            "USTEC",
+        ]:
+            lot_size = 1
+        elif symbol in ["XAUUSD", "XTIUSD"]:
+            lot_size = 100
+        else:
+            # forex
+            lot_size = 100_000
+        size = int(float(v_lots) * lot_size)
         # print(f"otype={otype}, symbol={symbol}, size={size}")
         global ticket
         ticket = None
@@ -148,7 +151,7 @@ class CTrader:
 
                 # print("A")
                 # print(f"v_ticket={v_ticket}")
-                time.sleep(4)
+                # time.sleep(4)
                 # ticket = self.fix.origin_to_pos_id[v_ticket]
                 # print("B")
 
@@ -673,10 +676,10 @@ class CTrader:
 
     def logout(self) -> str:
         """Logout."""
-        while self.isconnected():
+        if self.isconnected():
             self.fix.logout()
             logout = "Logged out"
-            time.sleep(1)
+            # time.sleep(1)
         else:
             logout = "Not logged in"
         return logout

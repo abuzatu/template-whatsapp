@@ -348,13 +348,39 @@ class Parse_ParamountInfoTech:
         And also there are several orders in the same text message, also separted by \n.
         That means that two of \n separate texts for one order.
         We split by that and then create a function that parses for one order.
+
+        Actually sometimes the \n does not appear, so we build a function to split
+        based on starting on BUY or SELL
         """
         text = text.upper()
         print("initial text")
         print(text)
 
         orders = []
-        for text_one in text.split("\n\n"):
+
+        if "BUY" in text or "SELL" in text:
+            # replace any group of two or more dots with empty space
+            # needed for the FOREX style, not affecting the gold style
+            text = re.sub(r"\.{2,}", " ", text)
+            # Splitting by "BUY" and "SELL" and including the delimiter in the result
+            word_list = re.split(r"(?:\b(BUY|SELL)\b)", text)
+            # Removing empty strings and whitespace
+            word_list = [word.strip() for word in word_list if word.strip()]
+            # create the text for each order
+            order_texts = []
+            for word in word_list:
+                if word == "BUY" or word == "SELL":
+                    # a new word starts
+                    order_texts.append(word)
+                else:
+                    # current word continues
+                    order_texts[-1] += " " + word
+        else:
+            # assume there is only one text
+            order_texts = [text]
+
+        for text_one in order_texts:
+            # for text_one in text.split("\n\n"):
             # this is the text used for one order
             # sometimes even this text is split on different lines
             # so we eliminate those

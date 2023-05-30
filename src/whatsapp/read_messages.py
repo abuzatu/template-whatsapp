@@ -1,9 +1,11 @@
 """Read latest messages in a loop."""
 
+# python
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 import pandas as pd
 from pathlib import Path
+from pprint import pformat
 import re
 import time
 from typing import Dict, List
@@ -13,13 +15,17 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 
+# our modules
 from cli.cli_send_message import CLI
+from ctrader.ctrader import CTrader
 from utils.logger import request_logger
+from trading.order import Order
 from trading.parse_InvestorsWizard import Parse_InvestorsWizard
 from trading.parse_PipsGainer_v2 import Parse_PipsGainer_v2 as Parse_PipsGainer
 from trading.parse_ParamountInfoTech import Parse_ParamountInfoTech
 from whatsapp.message import Message
 from whatsapp.web_driver import Driver
+
 
 from configs.settings import (
     WAIT_FOR_SEARCH_BOX,
@@ -30,6 +36,16 @@ from configs.settings import (
     SAVE_SCREENSHOT,
     SAVE_HTML,
     FILE_ORDERS_LOG,
+)
+
+# configuration for trading with CTrader: be careful to include from demo for now
+from configs.ctrader_demo import (
+    HOST,
+    SENDER_COMP_ID,
+    PASSWORD,
+    CURRENCY,
+    CLIENT_ID,
+    DEBUG,
 )
 
 
@@ -199,13 +215,21 @@ class ReadMessages:
                             request_logger.warning(
                                 f"contact{contact} not known, " "so can not build orders."
                             )
-                        request_logger.debug("Showing orders built")
+                        request_logger.info("Showing orders built")
                         for i, o in enumerate(orders):
                             id_order += 1
                             o.set_id(id_order)
                             print(o)
                             # append to the file
                             file.write(o.__str__() + "\n")
+                        request_logger.info("Trading orders built")
+                        for i, o in enumerate(orders):
+                            # continue
+                            # act on the order
+                            try:
+                                self.trade(o)
+                            except RuntimeError:
+                                print(f"WARNING! Not able to trade for order o={o}")
                     request_logger.debug("End receive_messages()")
                     file.flush()  # Flush the buffer to write the data after one contact
                     if counter % 1 == 0:
@@ -341,8 +365,13 @@ class ReadMessages:
         request_logger.debug(f"soup={soup}")
         request_logger.debug(f"soup.prettify()={soup.prettify()}")
         # div1_all
-        # div1=soup.find_all(class_="_1-FMR message-in focusable-list-item")[-1]
-        div1_all = soup.find_all("div", attrs={"class": re.compile("_1-FMR.*")})
+        # div1_all=soup.find_all(class_="_1-FMR message-in focusable-list-item")
+        # div1_all = soup.find_all("div", attrs={"class": re.compile("_1-FMR.*")})
+        # div1_all = soup.find_all(
+        #    class_="_3sxvM message-in focusable-list-item _1AOLJ _2UtSC _1jHIY"
+        # )
+        # below more generic, as this code _11JPr changes over time
+        div1_all = soup.find_all(class_=lambda c: c and "focusable-list-item " in c)
         request_logger.debug(f"len(div1_all)={len(div1_all)}")
         messages = self.get_messages(
             div1_all,
@@ -452,3 +481,50 @@ class ReadMessages:
         message = Message(contact, author, datetime, actual_message, quoted_message)
         request_logger.debug(f"message={message}")
         return message
+
+    def trade(self, o: Order) -> None:
+        """Trade based on the order received."""
+        # build trader object
+        api = CTrader(
+            server=HOST,
+            account=SENDER_COMP_ID,
+            password=PASSWORD,
+            currency=CURRENCY,
+            client_id=CLIENT_ID,
+            debug=DEBUG,
+        )
+        time.sleep(1)
+        positions = api.positions()
+        print(pformat(positions))
+        # do the trade
+        symbol = o.symbol
+        # set volumes in lots
+        if symbol in ["US30", "US500", "USTEC"]:
+            volume = 1.0  # as minimum requirement
+        elif symbol == "XTIUSD":
+            volume = 0.5  # as minimum requirement
+        else:
+            # forex, gold
+            volume = 0.01
+        datetime = o.datetime
+        text = f"for {symbol} of volume={volume} lot at {datetime}"
+        if o.action == "open":
+            if o.direction == "buy":
+                print(f"Opening trade buy {text}.")
+                api.buy(symbol, volume)
+            elif o.direction == "sell":
+                print(f"Opening trade sell {text}.")
+                api.buy(symbol, volume)
+            else:
+                print(f"for Open direction={o.direction} is not known for {text}.")
+        elif o.action == "close":
+            print(f"Closing all positions for {symbol}.")
+            api.close(symbol)
+        else:
+            print(f"Action {o.action} not known, need open or close, for {text}.")
+        time.sleep(1)
+        # close the connection
+        api.logout()
+        time.sleep(2)
+        # to be safe delete the api object
+        # del api
