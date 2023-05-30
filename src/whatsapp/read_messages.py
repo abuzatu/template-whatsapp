@@ -22,6 +22,7 @@ from utils.logger import request_logger
 from trading.order import Order
 from trading.parse_InvestorsWizard import Parse_InvestorsWizard
 from trading.parse_PipsGainer_v2 import Parse_PipsGainer_v2 as Parse_PipsGainer
+from trading.parse_PipsGainer_v3 import Parse_PipsGainer_v3 as Parse_PipsGainer_Vinay
 from trading.parse_ParamountInfoTech import Parse_ParamountInfoTech
 from whatsapp.message import Message
 from whatsapp.web_driver import Driver
@@ -204,7 +205,7 @@ class ReadMessages:
                         elif contact == "Harsh Colleague Vinay":
                             orders = Parse_PipsGainer().fit(actual_message)
                         elif contact == "Vinay Signals PipsGainer":
-                            orders = Parse_PipsGainer().fit(actual_message)
+                            orders = Parse_PipsGainer_Vinay().fit(actual_message)
                         elif contact == "Akib Alam Paramount InfoSoft Fost InfoTech":
                             orders = Parse_ParamountInfoTech().fit(actual_message)
                         elif contact == "+44 7309 966580":
