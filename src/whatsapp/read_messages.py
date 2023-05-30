@@ -41,8 +41,10 @@ from configs.settings import (
 # configuration for trading with CTrader: be careful to include from demo for now
 from configs.ctrader_demo import (
     HOST,
-    SENDER_COMP_ID,
-    PASSWORD,
+    SENDER_COMP_ID_1,
+    PASSWORD_1,
+    SENDER_COMP_ID_2,
+    PASSWORD_2,
     CURRENCY,
     CLIENT_ID,
     DEBUG,
@@ -484,11 +486,20 @@ class ReadMessages:
 
     def trade(self, o: Order) -> None:
         """Trade based on the order received."""
+        if o.author == "PGV":
+            # Pigs Gainer Vinay
+            account = SENDER_COMP_ID_2
+            password = PASSWORD_2
+        else:
+            # Akib and everyone else
+            account = SENDER_COMP_ID_1
+            password = PASSWORD_1
+
         # build trader object
         api = CTrader(
             server=HOST,
-            account=SENDER_COMP_ID,
-            password=PASSWORD,
+            account=account,
+            password=password,
             currency=CURRENCY,
             client_id=CLIENT_ID,
             debug=DEBUG,
