@@ -514,7 +514,7 @@ class ReadMessages:
                 api.buy(symbol, volume)
             elif o.direction == "sell":
                 print(f"Opening trade sell {text}.")
-                api.buy(symbol, volume)
+                api.sell(symbol, volume)
             else:
                 print(f"for Open direction={o.direction} is not known for {text}.")
         elif o.action == "close":
