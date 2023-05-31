@@ -417,6 +417,7 @@ class CTrader:
         What does the 5 argument do? It is not used in the main trade function.
         """
         try:
+            print("I try to close, but 100000k is hard coded.")
             action = self.trade("", "CLOSED", 0, "", amount / 100000, 0, 0, 0, 5, id)
         except Exception as e:
             logging.info(e)
