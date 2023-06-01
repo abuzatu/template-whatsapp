@@ -28,6 +28,7 @@ scikit-learn = "^1.2.2"
 bokeh = "2.4.3"
 selenium = "^4.8.3"
 ctrader-fix = "^0.1.1"
+inputimeout = "^1.0.4"
 
 
 [build-system]

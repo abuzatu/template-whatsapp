@@ -1050,6 +1050,16 @@ files = [
 ]
 
 [[package]]
+name = "inputimeout"
+version = "1.0.4"
+description = "Multi platform standard input with timeout"
+optional = false
+python-versions = ">=3.4"
+files = [
+    {file = "inputimeout-1.0.4-py3-none-any.whl", hash = "sha256:f4e23d27753cfc25268eefc8d52a3edc46280ad831d226617c51882423475a43"},
+]
+
+[[package]]
 name = "ipykernel"
 version = "6.21.3"
 description = "IPython Kernel for Jupyter"
@@ -3831,4 +3841,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "199cc31cd33583cc9986ef7bbfe2142004099cd33da49aff8724f02db03ab8f8"
+content-hash = "482977511f94f7cf774ad2a3dcf88313b4a2ca39abd4cd9d861b765ae2ad2729"
