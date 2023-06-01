@@ -633,6 +633,11 @@ class Parse_General:
         o.action = "announcement"
         return o
 
+    def parse_for_order_modify(self, o: Order, text: str) -> Order:
+        """Parse for order modify."""
+        o.action = "modify"
+        return o
+
     def parse_for_order_open(self, o: Order, text: str) -> Order:
         """Parse for order open.
 
