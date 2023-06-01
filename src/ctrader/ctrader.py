@@ -9,6 +9,19 @@ from .fix import FIX, Side, OrderType
 
 from typing import Any, Dict, List, Optional
 
+dict_symbol_volume = {
+    # indices min volume 1.0 lot
+    "US30": 1.0,
+    "US500": 1.0,
+    "USTEC": 1.0,
+    # oil min volume 0.5 lot
+    "XTIUSD": 0.5,
+}
+
+
+def get_volume_symbol(symbol: str) -> float:
+    return dict_symbol_volume[symbol] if symbol in dict_symbol_volume else 0.01
+
 
 class CTrader:
     """Class that controls the CTrader account.

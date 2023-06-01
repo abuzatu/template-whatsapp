@@ -17,13 +17,11 @@ from selenium.webdriver.common.keys import Keys
 
 # our modules
 from cli.cli_send_message import CLI
-from ctrader.ctrader import CTrader
+from ctrader.ctrader import CTrader, get_volume_symbol
 from utils.logger import request_logger
 from trading.order import Order
 from trading.parse_InvestorsWizard import Parse_InvestorsWizard
-from trading.parse_PipsGainer_v2 import Parse_PipsGainer_v2 as Parse_PipsGainer
-from trading.parse_PipsGainer_v3 import Parse_PipsGainer_v3 as Parse_PipsGainer_Vinay
-from trading.parse_ParamountInfoTech import Parse_ParamountInfoTech
+from trading.parse_General import Parse_General
 from whatsapp.message import Message
 from whatsapp.web_driver import Driver
 
@@ -201,19 +199,19 @@ class ReadMessages:
                         if contact == "Meisha Investors Wizard":
                             orders = Parse_InvestorsWizard().fit(actual_message)
                         elif contact == "PipsGainer Research":
-                            orders = Parse_PipsGainer().fit(actual_message)
+                            orders = Parse_General(author="PGR").fit(actual_message)
                         elif contact == "Harsh Colleague Vinay":
-                            orders = Parse_PipsGainer().fit(actual_message)
+                            orders = Parse_General(author="PGH").fit(actual_message)
                         elif contact == "Vinay Signals PipsGainer":
-                            orders = Parse_PipsGainer_Vinay().fit(actual_message)
+                            orders = Parse_General(author="PGV").fit(actual_message)
                         elif contact == "Akib Alam Paramount InfoSoft Fost InfoTech":
-                            orders = Parse_ParamountInfoTech().fit(actual_message)
+                            orders = Parse_General(author="PMT").fit(actual_message)
                         elif contact == "+44 7309 966580":
-                            orders = Parse_ParamountInfoTech().fit(actual_message)
+                            orders = Parse_General(author="ME1").fit(actual_message)
                         elif contact == "+44 7465 614471":
-                            orders = Parse_PipsGainer().fit(actual_message)
+                            orders = Parse_General(author="ME2").fit(actual_message)
                         elif contact == "+44 7465 660053":
-                            orders = Parse_InvestorsWizard().fit(actual_message)
+                            orders = Parse_General(author="ME3").fit(actual_message)
                         else:
                             request_logger.warning(
                                 f"contact{contact} not known, " "so can not build orders."
@@ -487,7 +485,7 @@ class ReadMessages:
 
     def trade(self, o: Order) -> None:
         """Trade based on the order received."""
-        if o.author == "PGV":
+        if o.author == "PGV" or o.author == "PGH" or o.author == "ME2":
             # Pigs Gainer Vinay
             account = SENDER_COMP_ID_2
             password = PASSWORD_2
@@ -511,13 +509,7 @@ class ReadMessages:
         # do the trade
         symbol = o.symbol
         # set volumes in lots
-        if symbol in ["US30", "US500", "USTEC"]:
-            volume = 1.0  # as minimum requirement
-        elif symbol == "XTIUSD":
-            volume = 0.5  # as minimum requirement
-        else:
-            # forex, gold
-            volume = 0.01
+        volume = get_volume_symbol(symbol)
         datetime = o.datetime
         text = f"for {symbol} of volume={volume} lot at {datetime}"
         if o.action == "open":

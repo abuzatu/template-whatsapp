@@ -15,7 +15,7 @@ class Parse_InvestorsWizard:
 
     def __init__(self) -> None:
         """Init."""
-        self.author = "IW"
+        self.author = "IWZ"
 
         self.examples = [
             "FOREX CALL: BUY GBPNZD ABOVE 1.9255 TARGET 1.9275 /1.9295 STOPLOSS 1.9235",
