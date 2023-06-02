@@ -485,6 +485,7 @@ class ReadMessages:
 
     def trade(self, o: Order) -> None:
         """Trade based on the order received."""
+        print("Start trade")
         if o.author == "PGV" or o.author == "PGH" or o.author == "ME2":
             # Pigs Gainer Vinay
             account = SENDER_COMP_ID_2
@@ -494,6 +495,7 @@ class ReadMessages:
             account = SENDER_COMP_ID_1
             password = PASSWORD_1
 
+        print("Start CTrader")
         # build trader object
         api = CTrader(
             server=HOST,
@@ -503,6 +505,7 @@ class ReadMessages:
             client_id=CLIENT_ID,
             debug=DEBUG,
         )
+        print("logged in")
         time.sleep(1)
         positions = api.positions()
         print(pformat(positions))

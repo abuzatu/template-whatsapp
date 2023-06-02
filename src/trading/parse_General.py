@@ -410,12 +410,6 @@ class Parse_General:
 
             Sl 1941
             """,
-            "GOLD BUY",
-            "GOLD SELL",
-            "GOLD CLOSE",
-            "BUY GOLD",
-            "SELL GOLD",
-            "CLOSE GOLD",
         ]
 
         # action: open order to trade v5 - just two words
@@ -424,6 +418,7 @@ class Parse_General:
             "GOLD SELL",
             "BUY GOLD",
             "SELL GOLD",
+            "GOLD SELL NOW",
         ]
 
         # action: close trade v1 - Akib
@@ -492,10 +487,10 @@ class Parse_General:
             # + self.examples_open_v2
             # + self.examples_open_v3
             # + self.examples_open_v4
-            # + self.examples_open_v5
+            + self.examples_open_v5
             # self.examples_modify
-            + self.examples_close_v1
-            + self.examples_close_v1
+            # + self.examples_close_v1
+            # + self.examples_close_v1
             # self.examples_announcement
         )
 
@@ -648,6 +643,7 @@ class Parse_General:
         We should not hard code assets to allow to add later new assets not known now.
         So we check for the keywords, as those are few.
         """
+        # print("AAAA for open")
         words = text.split()
         # check if the first word is one of the open keywords
         if words[0] in KEYWORDS_OPEN:
@@ -679,6 +675,7 @@ class Parse_General:
         o.symbol = get_symbol(symbol)
         # now the first two words are done, so we can drop them
         words_reduced = words[2:]
+        # print(f"words_reduced={words_reduced}")
 
         # let's convert the strings to numbers where possible
         words = []
@@ -713,6 +710,10 @@ class Parse_General:
         words = words[len(numbers) :]
         # print(f"words={words}")
 
+        # if "NOW" still present, remove it
+        if "NOW" in words:
+            words.remove("NOW")
+
         # next come pairs of strings and number, each string only one number
         # they can be in various orders, so that is why we want ot be generic
         # the strings are TP, SL, CMP
@@ -742,6 +743,8 @@ class Parse_General:
             elif word == "CMP":
                 # there is only one value for current market price
                 o.CMP = value
+            else:
+                print(f"WARNING, got an unexpected word ={word}")
 
             # for TP, sort the values
             if o.direction == "buy":

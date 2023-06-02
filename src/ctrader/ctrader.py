@@ -223,6 +223,7 @@ class CTrader:
                 ticket_orders = self.getOrdersIdByOriginId(v_ticket, client_id)
                 self.cancelOrdersByOriginId(ticket_orders, client_id)
                 self.parse_command(command, client_id)
+                print(f"command={command}")
                 return
 
         return v_ticket
@@ -495,9 +496,13 @@ class CTrader:
                     parts[4] if len(parts) >= 5 else None,
                 )
         if parts[0] == "close":
+            print("AAA this is about close")
+            print(f"len(parts)={len(parts)}, parts={parts}")
             if parts[1] == "all":
+                print("all")
                 self.fix.close_all()
             else:
+                print("individual")
                 if len(parts) == 3:
                     self.fix.close_position(parts[1], parts[2])
                 else:
