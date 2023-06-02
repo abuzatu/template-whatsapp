@@ -652,11 +652,12 @@ class Parse_General:
             symbol = words[1]
         elif words[1] in KEYWORDS_OPEN:
             # if the second element is the action, assume the first element is the asset
-            action = words[0]
-            symbol = words[1]
+            action = words[1]
+            symbol = words[0]
         else:
             # case not know if it starts with something else, treat as announcement
             o = self.parse_for_order_announcement(o, text)
+        print(f"action={action}, symbol={symbol}")
         # check the action
         if "BUY" in action:
             o.action = "open"
