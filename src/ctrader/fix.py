@@ -313,7 +313,7 @@ class FIX:
                 self.qstream.write(data)
                 self.parse_quote_message()
             except Exception as e:
-                logging.info(f"Market is Close or Disconnected {e}")
+                logging.info(f"Market is Closed or Disconnected {e}")
                 break
 
     def tworker(self) -> None:
@@ -324,14 +324,21 @@ class FIX:
             except Exception as e:
                 logging.info(e)
                 break
+            logging.info("B")
+            logging.info(f"data={data}")
+            logging.info("C")
             if len(data) == 0:
                 logging.info("Trade Logged out")
                 break
+            logging.info("C")
             try:
+                logging.info("D")
                 self.tstream.write(data)
+                logging.info("E")
                 self.parse_trade_message()
+                logging.info("F")
             except Exception as e:
-                logging.info(f"Market is Close or Logged out {e}")
+                logging.info(f"Market is Closed or Logged out {e}")
                 break
 
     def parse_quote_message(self) -> None:
@@ -351,6 +358,7 @@ class FIX:
 
     def parse_trade_message(self) -> None:
         """Parse trade message."""
+        logging.info(f"Start parse_trade_message")
         while len(self.tstream) > 0:
             match = re.search(rb"10=\d{3}\x01", self.tstream.peek(self.tstream.count()))
             if match:
@@ -359,7 +367,7 @@ class FIX:
                 for part in data:
                     tag, value = part.split(b"=", 1)
                     msg[Field(int(tag.decode()))] = value.decode()
-                logging.debug("\033[92mRECV <<< %s\033[0m" % msg)
+                logging.info("\033[92mRECV <<< %s\033[0m" % msg)
                 self.process_message(msg)
             else:
                 break
@@ -441,9 +449,8 @@ class FIX:
                     )
             if name not in self.spot_request_list:
                 self.spot_market_request(name)
-            self.order_list_callback(
-                self.order_list, self.spot_price_list, self.client_id
-            )
+                logging.info("AAAAA")
+            self.order_list_callback(self.order_list, self.spot_price_list)
 
     def process_logon(self, msg: Message) -> None:
         """Process logon."""
@@ -475,12 +482,8 @@ class FIX:
                 self.spot_price_list[name][
                     "bid" if e[Field.MDEntryType] == "0" else "ask"
                 ] = float(e[Field.MDEntryPx])
-            self.position_list_callback(
-                self.position_list, self.spot_price_list, self.client_id
-            )
-            self.order_list_callback(
-                self.order_list, self.spot_price_list, self.client_id
-            )
+            self.position_list_callback(self.position_list, self.spot_price_list)
+            self.order_list_callback(self.order_list, self.spot_price_list)
             return
         self.market_data[name] = {}
         for e in entries:
@@ -531,6 +534,8 @@ class FIX:
 
     def get_origin_from_pos_id(self, pos_id):
         """Get origin from pos_id."""
+        logging.info("Start get_origin_from_pos_id")
+        logging.info(f"{self.origin_to_pos_id}")
         keys = list(self.origin_to_pos_id.keys())
         values = list(self.origin_to_pos_id.values())
         if pos_id in values:
@@ -738,9 +743,14 @@ class FIX:
         self, symbol: str, side: Side, size: float, originId=None, pos_id=None
     ) -> None:
         """New market order."""
-        logging.info(f"error ORIGINAL ID: {originId}")
-        logging.info(f"error POS ID: {pos_id}")
+        logging.info(
+            f"Start fix.new_marekt_order(), symbol={symbol}, " f"side={side}",
+            f"size={size}",
+            f"originId: {originId}, pos_id={pos_id}",
+        )
+        logging.debug(f"self.sec_name_table={self.sec_name_table}")
         if symbol not in self.sec_name_table:
+            logging.error(f"symbol={symbol} not found in self.sec_table_id, we stop.")
             return
 
         msg = FIX.Message(SubID.TRADE, "D", self)
@@ -753,6 +763,7 @@ class FIX:
         msg[Field.Designation] = f"ClientID: {self.client_id}"
         if pos_id:
             msg[Field.PosMaintRptID] = pos_id
+        logging.info(f"msg={msg}")
 
         self.send_message(msg)
 

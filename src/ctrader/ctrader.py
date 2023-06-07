@@ -107,7 +107,17 @@ class CTrader:
         v_sl = stoploss
         v_tp = takeprofit
 
+        v_actionType = actionType
+        v_deviation = deviation
+
         logging.info(
+            f"Started trade: v_symbol={v_symbol}, v_action={v_action}, v_type={v_type}, "
+            f"v_actionType={v_actionType}, v_lots={v_lots}, v_sl={v_sl}, v_tp={v_tp}, "
+            f"v_price={v_openprice}, v_deviation={v_deviation}, "
+            f"id={id}, v_ticket={v_ticket}."
+        )
+
+        logging.debug(
             (
                 "Action: %s, Symbol: %s, Lots: %s, Ticket: %s, price: %s, "
                 "takeprofit: %s, stoploss: %s, type: %s"
@@ -121,7 +131,6 @@ class CTrader:
             v_tp,
             v_type,
         )
-        otype = actionType
         symbol = v_symbol[:6]
         # set lot size
         # TODO: to move to a config
@@ -137,7 +146,9 @@ class CTrader:
             # forex
             lot_size = 100_000
         size = int(float(v_lots) * lot_size)
-        # print(f"otype={otype}, symbol={symbol}, size={size}")
+        logging.info(
+            f"v_actionType={v_actionType}, symbol={symbol}, v_lots={v_lots}, size={size}"
+        )
         global ticket
         ticket = None
         client_id = str(self.client["_id"])
@@ -146,26 +157,30 @@ class CTrader:
             if int(v_type) > 1:
                 # abre ordem pendente
                 command = "{0} {1} {2} {3} {4}".format(
-                    otype, symbol, size, v_openprice, v_ticket
+                    v_actionType, symbol, size, v_openprice, v_ticket
                 )
                 # print(
                 #    f"OPEN v_type>1={v_type}, command={command}, "
                 #    "should be open limit order"
                 # )
-                self.parse_command(command, client_id)
+                self.parse_command(command)
             else:
+                # v_type == 0 -> market order
                 # abre posicao a mercado
-                command = "{0} {1} {2} {3}".format(otype, symbol, size, v_ticket)
-                # print(
-                #    f"OPEN v_type==0={v_type}, command={command}, "
-                #    "should be open market order"
-                # )
-                self.parse_command(command, client_id)
+                command = "{0} {1} {2} {3}".format(v_actionType, symbol, size, v_ticket)
+                logging.info(
+                    f'OPEN v_type==0={v_type}, command="{command}", '
+                    "should be open market order, start pasing command"
+                )
+                self.parse_command(command)
+                logging.info("End parsing command.")
 
                 # print("A")
-                # print(f"v_ticket={v_ticket}")
+                # logging.info(f"v_ticket={v_ticket}")
                 # time.sleep(4)
+                # logging.info(f"self.fix.origin_to_pos_id={self.fix.origin_to_pos_id}")
                 # ticket = self.fix.origin_to_pos_id[v_ticket]
+                # logging.info(f"ticket={ticket}")
                 # print("B")
 
                 if v_sl or v_tp:
@@ -174,7 +189,7 @@ class CTrader:
                     while True:
                         try:
                             ticket = self.fix.origin_to_pos_id[v_ticket]
-                            # time.sleep(1)
+                            time.sleep(1)
                             if ticket:  # Verifica se a variável ticket não está vazia
                                 break
                         except Exception as e:
@@ -193,7 +208,7 @@ class CTrader:
                             otype, symbol, size, v_sl, v_ticket, ticket
                         )
                         # print(f"We have SL command={command}")
-                        self.parse_command(command, client_id)
+                        self.parse_command(command)
                     if v_tp and float(v_tp) > 0:
                         # print(f"D, TP={v_tp}")
                         # cancela ordens pendentes abertas de TP e SL
@@ -204,7 +219,7 @@ class CTrader:
                             otype, symbol, size, v_tp, v_ticket, ticket
                         )
                         # print(f"We have TP command={command}")
-                        self.parse_command(command, client_id)
+                        self.parse_command(command)
 
         elif v_action in ["CLOSED", "PCLOSED"]:
             # print("closing action")
@@ -212,18 +227,22 @@ class CTrader:
                 # ORDEM
                 # cancela ordens pendentes
                 self.fix.cancel_order(v_ticket)
-                ticket_orders = self.getOrdersIdByOriginId(v_ticket, client_id)
-                self.cancelOrdersByOriginId(ticket_orders, client_id)
-                self.parse_command(command, client_id)
+                ticket_orders = self.getOrdersIdByOriginId(v_ticket)
+                self.cancelOrdersByOriginId(ticket_orders)
+                self.parse_command(command)
                 return
             else:
                 # POSICAO
+                logging.info(f"Before close_position v_ticket={v_ticket}, size={size}")
                 self.fix.close_position(v_ticket, size)
+                logging.info(f"After close_position v_ticket={v_ticket}, size={size}")
                 # cancela ordens pendentes abertas de TP e SL
-                ticket_orders = self.getOrdersIdByOriginId(v_ticket, client_id)
-                self.cancelOrdersByOriginId(ticket_orders, client_id)
-                self.parse_command(command, client_id)
+                ticket_orders = self.getOrdersIdByOriginId(v_ticket)
+                logging.info("BBBB")
+                self.cancelOrdersByOriginId(ticket_orders)
+                logging.info("CCCC")
                 print(f"command={command}")
+                self.parse_command(command)
                 return
 
         return v_ticket
@@ -425,14 +444,14 @@ class CTrader:
         """
         return self.trade("", "PCLOSED", 0, "", volume, 0, 0, 0, 5, id)
 
-    def positionCloseById(self, id: str, amount: float) -> Optional[str]:
+    def positionCloseById(self, id: str, volume: float) -> Optional[str]:
         """Position close by ID.
 
         What does the 5 argument do? It is not used in the main trade function.
         """
         try:
-            print("I try to close, but 100000k is hard coded.")
-            action = self.trade("", "CLOSED", 0, "", amount / 100000, 0, 0, 0, 5, id)
+            print("Start positionCloseByID")
+            action = self.trade("", "CLOSED", 0, "", volume, 0, 0, 0, 5, id)
         except Exception as e:
             logging.info(e)
             action = None
@@ -460,11 +479,13 @@ class CTrader:
         """Get orders."""
         return json.loads(json.dumps(self.client["orders"]))
 
-    def parse_command(self, command: str, client_id: str) -> None:
+    def parse_command(self, command: str) -> None:
         """Parse command."""
         parts = command.split(" ")
-        logging.info(parts)
-        logging.info(f"Command: {command} ")
+        logging.info(f"Started parse_command, command={command}")
+        # parts.append("PID339051671")
+        logging.info(f"parts={parts}")
+        logging.info(f"is_logged_in={self.fix.logged}")
 
         if not self.fix.logged:
             logging.info("waiting logging...")
@@ -477,7 +498,9 @@ class CTrader:
             except ValueError:
                 logging.error("Invalid subscription ID")
         if parts[0] in ["buy", "sell"]:
+            logging.info("It's buy or sell.")
             if parts[1] in ["stop", "limit"]:
+                logging.info("It's limit order or stop order.")
                 self.fix.new_limit_order(
                     parts[2].upper(),
                     Side.Buy if parts[0] == "buy" else Side.Sell,
@@ -488,6 +511,15 @@ class CTrader:
                     parts[6] if len(parts) >= 7 else None,
                 )
             else:
+                logging.info("It's market order.")
+                input_to_market_order = (
+                    parts[1].upper(),
+                    Side.Buy if parts[0] == "buy" else Side.Sell,
+                    float(parts[2]),
+                    parts[3] if len(parts) >= 4 else None,
+                    parts[4] if len(parts) >= 5 else None,
+                )
+                logging.info(f"input_to_market_order = {input_to_market_order}")
                 self.fix.new_market_order(
                     parts[1].upper(),
                     Side.Buy if parts[0] == "buy" else Side.Sell,
@@ -496,7 +528,7 @@ class CTrader:
                     parts[4] if len(parts) >= 5 else None,
                 )
         if parts[0] == "close":
-            print("AAA this is about close")
+            print("It's about closing positions.")
             print(f"len(parts)={len(parts)}, parts={parts}")
             if parts[1] == "all":
                 print("all")
@@ -508,6 +540,7 @@ class CTrader:
                 else:
                     self.fix.close_position(parts[1])
         if parts[0] == "cancel":
+            logging.info("It's about canceling orders..")
             if parts[1] == "all":
                 self.fix.cancel_all()
             else:
@@ -521,10 +554,11 @@ class CTrader:
             key=len,
         )
 
-    def position_list_callback(
-        self, data: dict, price_data: dict, client_id: str
-    ) -> None:
+    def position_list_callback(self, data: dict, price_data: dict) -> None:
         """Position list callback."""
+        logging.info(f"In position_list_callback()")
+        print(f"position: data={data}")
+        print(f"position: price_data={price_data}")
         positions = []
         for i, kv in enumerate(data.items()):
             pos_id = kv[0]
@@ -576,7 +610,7 @@ class CTrader:
                 }
             )
         self.client.update(positions=positions)
-        logging.debug("client_id %s positions: %s", client_id, positions)
+        logging.debug("positions: %s", positions)
 
     def getPositionIdByOriginId(self, posId: str) -> Optional[str]:
         """Get PositionID by OriginID."""
@@ -620,8 +654,11 @@ class CTrader:
         # print(self.fix.spot_price_list)
         return self.fix.spot_price_list
 
-    def order_list_callback(self, data: dict, price_data: dict, client_id: str):
-        """Ordr list callback."""
+    def order_list_callback(self, data: dict, price_data: dict):
+        """Order list callback."""
+        logging.info(f"In order_list_callback()")
+        logging.info(f"order: data={data}")
+        logging.info(f"order: price_data={price_data}")
         orders = []
         for i, kv in enumerate(data.items()):
             ord_id = kv[0]
@@ -659,7 +696,7 @@ class CTrader:
                 }
             )
         self.client.update(orders=orders)
-        logging.debug("client_id %s orders: %s", client_id, orders)
+        logging.debug("orders: %s", orders)
 
     def quote_callback(self, name: str, digits: int, data: dict):
         """Quote callback."""
@@ -731,5 +768,5 @@ class CTrader:
             # if here close the entire position
             # Close position by id of all amount
             # by giving it the entire amount the position
-            print(f"Closing {position}")
+            logging.info(f"Closing {position}")
             self.positionCloseById(position["pos_id"], position["amount"])
