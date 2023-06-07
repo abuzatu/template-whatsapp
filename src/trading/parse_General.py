@@ -481,17 +481,26 @@ class Parse_General:
             "CLOSE GOLD",
         ]
 
+        # action: close trade v1 - just two words
+        self.examples_regular_v1 = [
+            "Now I will say buy gold and you will see that it buys",
+            "Now I will say sell gold and you will see that it sells",
+            "Now I will say close gold and you will see that it closes",
+            "You should use buy or sell market order, but not buy_limit or stop_limit.",
+        ]
+
         self.examples = (
             []
             # + self.examples_open_v1
             # + self.examples_open_v2
             # + self.examples_open_v3
             # + self.examples_open_v4
-            + self.examples_open_v5
+            # + self.examples_open_v5
             # self.examples_modify
             # + self.examples_close_v1
             # + self.examples_close_v1
             # self.examples_announcement
+            + self.examples_regular_v1
         )
 
     def fit_examples(self) -> None:
