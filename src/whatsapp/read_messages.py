@@ -135,6 +135,9 @@ class ReadMessages:
             while True:
                 # increase the counter of the loop to keep track
                 counter += 1
+                if counter % 10 == 0:
+                    # pass
+                    print(f"... {str(counter).zfill(3)}, {pd.Timestamp.now()}")
                 # read the messages for each contact in this loop
                 for contact in self.contacts:
                     # if the first loop, then create an empty list
@@ -143,7 +146,7 @@ class ReadMessages:
                         dict_contact_messages[contact] = []
                     # we can choose to print a . for each loop, to let us know
                     # how fast the loops are progressing
-                    if counter % 2 == 0:
+                    if counter % 1000 == 0:
                         # pass
                         print(f"... {str(counter).zfill(3)}, {pd.Timestamp.now()}")
                     if counter % 1 == 0:
