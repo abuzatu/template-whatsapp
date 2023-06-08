@@ -616,6 +616,7 @@ class Parse_General:
 
     def build_one_order(self, text: str) -> Order:
         """Parse one text to build one Order."""
+        # print(f"Build one order from text={text}")
         o = Order()
         # fill already the author
         o.author = self.author
@@ -666,6 +667,7 @@ class Parse_General:
         else:
             # case not know if it starts with something else, treat as announcement
             o = self.parse_for_order_announcement(o, text)
+            return o
         print(f"action={action}, symbol={symbol}")
         # check the action
         if "BUY" in action:
