@@ -44,6 +44,10 @@ KEYWORDS_OPEN = [
     "SELL_STOP",
 ]
 
+KEYWORDS_REMOVE = [
+    "AGAIN",
+]
+
 KEYWORDS_CLOSE = [
     "CLOSE",
     "MODIFY",
@@ -292,7 +296,7 @@ class Parse_General:
             """,
         ]
 
-        # action: open order to trade v3 - PipsGainer Researcher
+        # action: open order to trade v3 - PipsGainer Researcher one at a time
         self.examples_open_v3 = [
             """
             FOREX
@@ -374,10 +378,35 @@ class Parse_General:
             TARGET 2  1989
             STOP LOSS 1972
             """,
+            """
+            BUY STOP XAUUSD @ 1965
+            TARGET 1  1970
+            TARGET 2  1975
+            STOP LOSS 1958
+            """,
+        ]
+
+        # action: open order to trade v3 - PipsGainer Researcher several at a time
+        self.examples_open_v4 = [
+            """
+            COMEX
+            BUY STOP XAUUSD @ 1965
+            TARGET 1  1970
+            TARGET 2  1975
+            STOP LOSS 1958
+            CMP 1964.70
+
+            FOREX 
+            BUY STOP GBPUSD @ 1.2558
+            TARGET 1  1.2578
+            TARGET 2  1.2598
+            STOP LOSS 1.2532
+            CMP 1.2557
+            """,
         ]
 
         # action: open order to trade v4 - PipsGainer Vinay
-        self.examples_open_v4 = [
+        self.examples_open_v5 = [
             """
             Gold sell 1955 1956
 
@@ -405,15 +434,35 @@ class Parse_General:
             """
             GOLD BUY  1955
 
-            TP  1962 
-            TP  1969 
+            TP  1962
+            TP  1969
 
             Sl 1941
             """,
+            """
+            ⚡Gold sell again 1968
+            ⚡TP  1966
+            ⚡TP  1968
+            ⚡TP  1962
+            ⚡TP  1960
+            ⚡ SL 1975
+            """,
+            """
+            Gold sell  1958 1960 
+            TP  1954
+            TP  1952
+            TP  1950
+            SL 1967
+            """,
+            """
+            GOLD BUY 1944 
+            Tp  1950 
+            Sl 1936
+            """,
         ]
 
-        # action: open order to trade v5 - just two words
-        self.examples_open_v5 = [
+        # action: open order to trade v6 - just two words
+        self.examples_open_v6 = [
             "GOLD BUY",
             "GOLD SELL",
             "BUY GOLD",
@@ -494,13 +543,14 @@ class Parse_General:
             # + self.examples_open_v1
             # + self.examples_open_v2
             # + self.examples_open_v3
-            # + self.examples_open_v4
+            + self.examples_open_v4
             # + self.examples_open_v5
+            # + self.examples_open_v6
             # self.examples_modify
             # + self.examples_close_v1
             # + self.examples_close_v1
             # self.examples_announcement
-            + self.examples_regular_v1
+            # + self.examples_regular_v1
         )
 
     def fit_examples(self) -> None:
@@ -534,10 +584,12 @@ class Parse_General:
         # e.g. Akib for forex, so split them
         # splitting by KEYWORD_OPEN and include the delimiter in the result
         #
+        # print(f"KEYWORDS_OPEN={KEYWORDS_OPEN}")
         if if_text_starts_with_any_of_prefixes(text, KEYWORDS_OPEN):
             # Akib forex
             # split by "BUY" and "SELL" and including the delimiter in the result
             # "(?:\b(BUY|SELL|BUY_LIMIT|SELL_LIMIT|BUY_STOP|SELL_STOP)\b)"
+            # ("Text starts with one of the KEYWORDS_OPEN")
             # but automate as below
             pattern = rf"(?:\b({'|'.join(KEYWORDS_OPEN)})\b)"
             word_list = re.split(pattern, text)
@@ -547,8 +599,10 @@ class Parse_General:
             # create the text for each order
             order_texts = []
             for word in word_list:
+                # print(f"word={word}")
                 if word in KEYWORDS_OPEN:
                     # a new word starts
+                    # print(f"A new order starts")
                     order_texts.append(word)
                 else:
                     # current word continues
@@ -556,11 +610,13 @@ class Parse_General:
 
         else:
             # assume there is only one text
+            # print("Assume there is only one text = {text}")
             order_texts = [text]
 
         # for each text build one order
         orders = []
         for text_one in order_texts:
+            # print(f"New text_one={text_one}")
             o = self.build_one_order(text_one)
             orders.append(o)
         return orders
@@ -569,6 +625,9 @@ class Parse_General:
         """Clean text."""
         # place all in capital letters
         text = text.upper()
+
+        # reomove ⚡
+        text = text.replace("⚡", "")
 
         # replace special character with spaces
         pattern = r"[,@=]"  # Regular expression pattern matching comma, @, or equal
@@ -604,6 +663,10 @@ class Parse_General:
         # we want to remove it
         for segment in ["FOREX", "COMEX", "CRYPTO (SPOT)"]:
             text = text.replace(f"{segment} ", "")
+
+        # remove some filling words not relevant, e.g. AGAIN
+        for word in KEYWORDS_REMOVE:
+            text = text.replace(word, "")
 
         # some are limit and stop orders, let's group them into one word
         text = text.replace("BUY LIMIT", "BUY_LIMIT")
@@ -668,7 +731,7 @@ class Parse_General:
             # case not know if it starts with something else, treat as announcement
             o = self.parse_for_order_announcement(o, text)
             return o
-        print(f"action={action}, symbol={symbol}")
+        # print(f"action={action}, symbol={symbol}")
         # check the action
         if "BUY" in action:
             o.action = "open"
@@ -683,8 +746,14 @@ class Parse_General:
         else:
             # case not known
             o = self.parse_for_order_announcement(o, text)
+            return o
+        # print(
+        #    f"action={action}, symbol={symbol}, direction={o.direction}, "
+        #    f"action_suffix={action_suffix}, type={o.type}"
+        # )
         # check the symbol
         o.symbol = get_symbol(symbol)
+        # print(f"o.symbol={o.symbol}")
         # now the first two words are done, so we can drop them
         words_reduced = words[2:]
         # print(f"words_reduced={words_reduced}")
@@ -756,7 +825,9 @@ class Parse_General:
                 # there is only one value for current market price
                 o.CMP = value
             else:
-                print(f"WARNING, got an unexpected word ={word}")
+                print(f"WARNING, got an unexpected word={word}")
+                o = self.parse_for_order_announcement(o, text)
+                return o
 
             # for TP, sort the values
             if o.direction == "buy":
@@ -808,16 +879,17 @@ class Parse_General:
             else:
                 if word not in KEYWORDS_CLOSE:
                     words.append(word)
-        print(f"numbers={numbers}")
+        # print(f"numbers={numbers}")
         if len(numbers) == 1:
             o.CMP = numbers[0]
 
         # from the words remove known words so that we remain only with the asset
         # normally here only one should be remaining and that should be the asset
-        print(f"words={words}")
+        # print(f"words={words}")
         if len(words) == 1:
             o.symbol = get_symbol(words[0])
         else:
             # case not supported
             o = self.parse_for_order_announcement(o, text)
+            return o
         return o
