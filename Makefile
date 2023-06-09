@@ -122,3 +122,7 @@ send:
 
 read:
 	make run_whatsapp_read_messages_3
+
+fix:
+	./bin/dev/docker-exec.sh poetry run dotenv run ipython \
+	bin/run/run_fixapi.py
