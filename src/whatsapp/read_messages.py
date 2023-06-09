@@ -135,7 +135,7 @@ class ReadMessages:
             while True:
                 # increase the counter of the loop to keep track
                 counter += 1
-                if counter % 10 == 0:
+                if counter < 10 or counter % 10 == 0:
                     # pass
                     print(f"... {str(counter).zfill(3)}, {pd.Timestamp.now()}")
                 # read the messages for each contact in this loop
