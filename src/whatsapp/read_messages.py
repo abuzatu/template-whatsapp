@@ -201,7 +201,7 @@ class ReadMessages:
                         )
                         if contact == "Meisha Investors Wizard":
                             orders = Parse_InvestorsWizard().fit(actual_message)
-                        elif contact == "PipsGainer Research":
+                        elif contact == "PipsGainer Research Signals":
                             orders = Parse_General(author="PGR").fit(actual_message)
                         elif contact == "Harsh Colleague Vinay":
                             orders = Parse_General(author="PGH").fit(actual_message)
