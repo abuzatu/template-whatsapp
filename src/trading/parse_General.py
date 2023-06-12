@@ -648,7 +648,6 @@ class Parse_General:
             """,
             """
             modify target price at 1.6630 in gbpcad
-            
             modify target price at 85.10 in nzdjpy
             """,
             """
@@ -662,7 +661,7 @@ class Parse_General:
             modify target price at 85.10 in nzdjpy
             """,
             """
-            set target price at 0.9120 in usdchf 
+            set target price at 0.9120 in usdchf
 
             set target price at 1.0680 in eurusd
 

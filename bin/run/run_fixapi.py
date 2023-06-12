@@ -56,10 +56,6 @@ class Window:
             ]
             self.accounts[account_name] = Broker(
                 credentials=credentials,
-                price_reader=None,
-                price_writer=None,
-                trade_reader=None,
-                trade_writer=None,
                 price_sendersubid=None,
                 trade_sendersubid=None,
                 price_msgseqnum=1,
@@ -107,7 +103,6 @@ class Window:
 
         But no window for now. So we just wait.
         """
-
         counter = 0
         while True:
             counter += 1
@@ -130,20 +125,22 @@ class Window:
                 if True:
                     print(
                         f"ACCOUNT={account_name}, positions: "
-                        f"num_opened_positions = {self.accounts[account_name].num_opened_positions}, "  # noqa d
+                        f"num_opened_positions = "
+                        f"{self.accounts[account_name].num_opened_positions}, "
                         f"len(positions) = {len(self.accounts[account_name].positions)}"
                     )
-                    # print(f"positions = {self.icmarkets.positions}")
+                    # print(f"positions = {self.accounts[account_name].positions}")
                     for position in self.accounts[account_name].positions:
                         print(f"position = {position}")
                 # orders
                 if True:
                     print(
                         f"ACCOUNT={account_name}, orders: "
-                        f"num_opened_orders = {self.accounts[account_name].num_opened_orders}, "  # noqa
+                        f"num_opened_orders = "
+                        f"{self.accounts[account_name].num_opened_orders}, "
                         f"len(orders) = {len(self.accounts[account_name].orders)}"
                     )
-                    # print(f"positions = {self.icmarkets.positions}")
+                    # print(f"positions = {self.accounts[account_name].positions}")
                     for order in self.accounts[account_name].orders:
                         print(f"order = {order}")
 
@@ -155,337 +152,148 @@ class Window:
                         num_repeats=1,
                     )
 
-                if True and counter == 10:
+                if True and counter == 5:
                     position_ids = await self.accounts[account_name].close_all_positions()
                     print(f"Closed all positions: position_ids={position_ids}")
 
-                if True and counter == 12:
+                if True and counter == 6:
                     order_ids = await self.accounts[account_name].cancel_all_orders()
                     print(f"Closed all orders: order_ids={order_ids}")
 
-            await asyncio.sleep(5)
-            continue
+                continue
 
-            if True and counter == 2:
-                symbols = [
-                    "XTIUSD",
-                ]
-                position_ids = (
-                    await self.icmarkets.close_all_positions_for_several_symbols(  # noqa
-                        symbols
+                if True and counter == 2:
+                    symbols = [
+                        "XTIUSD",
+                    ]
+                    position_ids = await self.accounts[
+                        account_name
+                    ].close_all_positions_for_several_symbols(symbols)
+                    print(
+                        f"Closed all positions for symbols={symbols}: "
+                        f"position_ids={position_ids}"
                     )
-                )
-                print(
-                    f"Closed all positions for symbols={symbols}: position_ids={position_ids}"
-                )  # noqa
 
-            await asyncio.sleep(5)
-            continue
-
-            if True and counter == 2:
-                symbol = "BTCUSD"
-                (
-                    min_quantity_to_trade,
-                    our_quantity_to_trade,
-                ) = get_info_quantity_to_trade(symbol)
-                # set TP for a given position buy position
-                await self.icmarkets.set_order(
-                    symbol=symbol,
-                    direction="sell",
-                    order_type="limit",
-                    quantity_to_trade=min_quantity_to_trade,
-                    price=30000,
-                    position_id="339874985",
-                )
-                # set SL for a given buy position
-                await self.icmarkets.set_order(
-                    symbol=symbol,
-                    direction="sell",
-                    order_type="stop",
-                    quantity_to_trade=min_quantity_to_trade,
-                    price=24000,
-                    position_id="339874985",
-                )
-
-            if False and counter == 2:
-                symbol = "USTEC"
-                (
-                    min_quantity_to_trade,
-                    our_quantity_to_trade,
-                ) = get_info_quantity_to_trade(symbol)
-                # set TP for a given position buy position
-                await self.icmarkets.set_order(
-                    symbol=symbol,
-                    direction="sell",
-                    order_type="limit",
-                    quantity_to_trade=our_quantity_to_trade,
-                    price=14587,
-                    position_id="339825713",
-                )
-                # set SL for a given buy position
-                await self.icmarkets.set_order(
-                    symbol=symbol,
-                    direction="sell",
-                    order_type="stop",
-                    quantity_to_trade=our_quantity_to_trade,
-                    price=14580,
-                    position_id="339826567",
-                )
-
-            if False and counter == 2:
-                symbol = "US30"
-                (
-                    min_quantity_to_trade,
-                    our_quantity_to_trade,
-                ) = get_info_quantity_to_trade(symbol)
-                # set TP for a given position buy position
-                await self.icmarkets.set_order(
-                    symbol=symbol,
-                    direction="sell",
-                    order_type="limit",
-                    quantity_to_trade=our_quantity_to_trade,
-                    price=33914,
-                    position_id="339826567",
-                )
-                # set SL for a given buy position
-                await self.icmarkets.set_order(
-                    symbol=symbol,
-                    direction="sell",
-                    order_type="stop",
-                    quantity_to_trade=our_quantity_to_trade,
-                    price=33920,
-                    position_id="339826567",
-                )
-
-            if False and counter == 2:
-                symbol = "XAUUSD"
-                (
-                    min_quantity_to_trade,
-                    our_quantity_to_trade,
-                ) = get_info_quantity_to_trade(symbol)
-                # set TP for a given position buy position
-                await self.icmarkets.set_order(
-                    symbol=symbol,
-                    direction="sell",
-                    order_type="limit",
-                    quantity_to_trade=min_quantity_to_trade,
-                    price=1959.2,
-                    position_id="339825688",
-                )
-                # set SL for a given buy position
-                await self.icmarkets.set_order(
-                    symbol=symbol,
-                    direction="sell",
-                    order_type="stop",
-                    quantity_to_trade=min_quantity_to_trade,
-                    price=1958.8,
-                    position_id="339825688",
-                )
-
-            if False and counter == 2:
-                order_ids = await self.icmarkets.cancel_all_orders()
-                print(f"Closed all orders: order_ids={order_ids}")
-
-            if True and counter == 3:
-                await self.icmarkets.set_order_examples(
-                    symbol="AUDUSD",
-                    price_low=0.6700,
-                    price_high=0.6800,
-                    num_repeats=2,
-                )
-
-            if True and counter == 4:
-                await self.icmarkets.set_order_examples(
-                    symbol="XAUUSD",
-                    price_low=1900,
-                    price_high=2000,
-                    num_repeats=1,
-                )
-
-            if True and counter == 4:
-                await self.icmarkets.set_order_examples(
-                    symbol="EURUSD",
-                    price_low=1.07,
-                    price_high=1.09,
-                    num_repeats=1,
-                )
-
-            if True and counter == 4:
-                await self.icmarkets.set_order_examples(
-                    symbol="EURCAD",
-                    price_low=1.4,
-                    price_high=1.9,
-                    num_repeats=1,
-                )
-
-            if False and counter == 10:
-                await self.icmarkets.close_position(position_id="339874985")
-
-            if True and counter == 5:
-                symbol = "AUDUSD"
-                position_ids = await self.icmarkets.close_all_positions_for_one_symbol(
-                    symbol
-                )  # biqa
-                print(
-                    f"Closed positions for symbol={symbol}: position_ids={position_ids}"
-                )  # noqa
-
-            if True and counter == 6:
-                symbols = ["EURUSD", "EURAUD"]
-                position_ids = (
-                    await self.icmarkets.close_all_positions_for_several_symbols(  # noqa
-                        symbols
+                if True and counter == 2:
+                    symbol = "BTCUSD"
+                    (
+                        min_quantity_to_trade,
+                        our_quantity_to_trade,
+                    ) = get_info_quantity_to_trade(symbol)
+                    # set TP for a given position buy position
+                    await self.accounts[account_name].set_order(
+                        symbol=symbol,
+                        direction="sell",
+                        order_type="limit",
+                        quantity_to_trade=min_quantity_to_trade,
+                        price=30000,
+                        position_id="339874985",
                     )
-                )
-                print(
-                    f"Closed all positions for symbols={symbols}: position_ids={position_ids}"
-                )  # noqa
+                    # set SL for a given buy position
+                    await self.accounts[account_name].set_order(
+                        symbol=symbol,
+                        direction="sell",
+                        order_type="stop",
+                        quantity_to_trade=min_quantity_to_trade,
+                        price=24000,
+                        position_id="339874985",
+                    )
 
-            if True and counter == 8:
-                position_ids = await self.icmarkets.close_all_positions()
-                print(f"Closed all positions: position_ids={position_ids}")
+                if True and counter == 10:
+                    # this will also close all orders associated with that position
+                    await self.accounts[account_name].close_position(
+                        position_id="339874985"
+                    )
 
-            if True and counter == 10:
-                order_ids = await self.icmarkets.cancel_all_orders()
-                print(f"Closed all orders: order_ids={order_ids}")
+                if True and counter == 5:
+                    symbol = "AUDUSD"
+                    position_ids = await self.accounts[
+                        account_name
+                    ].close_all_positions_for_one_symbol(symbol)
+                    print(
+                        f"Closed positions for symbol={symbol}: "
+                        f"position_ids={position_ids}"
+                    )
 
+                if True and counter == 6:
+                    symbols = ["EURUSD", "EURAUD"]
+                    position_ids = await self.accounts[
+                        account_name
+                    ].close_all_positions_for_several_symbols(symbols)
+                    print(
+                        f"Closed all positions for symbols={symbols}: "
+                        f"position_ids={position_ids}"
+                    )
+
+                if True and counter == 6:
+                    # close all orders for one position
+                    order_ids = await self.accounts[
+                        account_name
+                    ].cancel_all_orders_for_one_position(
+                        position_id="339826567",
+                    )
+                    print(
+                        f"Closed all orders for position_id={339826567}, "
+                        f"order_ids={order_ids}"
+                    )
+
+                if True and counter == 2:
+                    await self.accounts[account_name].cancel_order(
+                        order_id="543142033",
+                    )
+
+                if True and counter == 10:
+                    order_ids = await self.accounts[
+                        account_name
+                    ].cancel_all_orders_for_one_symbol(
+                        symbol="US500",
+                    )
+                    print(
+                        f"Closed all orders for symbol={symbol}, "
+                        f"order_ids={order_ids}"
+                    )
+
+                if True and counter == 12:
+                    order_ids = await self.accounts[
+                        account_name
+                    ].cancel_all_orders_for_several_symbols(
+                        symbols=["BTCUSD", "US30", "XAUUSD"]
+                    )
+                    print(
+                        f"Closed all orders for symbols={symbols}, "
+                        f"order_ids={order_ids}"
+                    )
+
+                if True and counter == 20:
+                    order_ids = await self.accounts[account_name].cancel_all_orders()
+                    print(f"Closed all orders: order_ids={order_ids}")
+
+            # wait 5 seconds for the current counter
             await asyncio.sleep(5)
-            continue
-
-            if False and counter == 4:
-                order_ids = await self.icmarkets.cancel_all_orders()
-                print(f"Closed all orders: order_ids={order_ids}")
-
-            if True and counter == 2:
-                symbol = "US30"
-                (
-                    min_quantity_to_trade,
-                    our_quantity_to_trade,
-                ) = get_info_quantity_to_trade(symbol)
-                # set TP for a given position buy position
-                await self.icmarkets.set_order(
-                    symbol=symbol,
-                    direction="sell",
-                    order_type="limit",
-                    quantity_to_trade=our_quantity_to_trade,
-                    price=34100,
-                    position_id="339826567",
-                )
-                # set SL for a given buy position
-                await self.icmarkets.set_order(
-                    symbol=symbol,
-                    direction="sell",
-                    order_type="stop",
-                    quantity_to_trade=our_quantity_to_trade,
-                    price=33600,
-                    position_id="339826567",
-                )
-
-            if True and counter == 6:
-                # close all trades for one position
-                order_ids = await self.icmarkets.cancel_all_orders_for_one_position(
-                    position_id="339826567",
-                )
-                print(
-                    f"Closed all orders for position_id={339826567}, "
-                    f"order_ids={order_ids}"
-                )
-
-            await asyncio.sleep(5)
-            continue
-
-            if True and counter == 3:
-                await self.icmarkets.set_order_examples(
-                    symbol="AUDUSD",
-                    price_low=0.6700,
-                    price_high=0.6800,
-                    num_repeats=2,
-                )
-
-            if True and counter == 4:
-                await self.icmarkets.set_order_examples(
-                    symbol="US500",
-                    price_low=4000,
-                    price_high=4500,
-                    num_repeats=2,
-                )
-
-            if True and counter == 5:
-                await self.icmarkets.set_order_examples(
-                    symbol="EURAUD",
-                    price_low=1.58,
-                    price_high=1.60,
-                    num_repeats=2,
-                )
-
-            if True and counter == 6:
-                await self.icmarkets.set_order_examples(
-                    symbol="XAUUSD",
-                    price_low=1900,
-                    price_high=2000,
-                    num_repeats=1,
-                )
-
-            if True and counter == 8:
-                await self.icmarkets.set_order_examples(
-                    symbol="BTCUSD",
-                    price_low=24000,
-                    price_high=30000,
-                    num_repeats=1,
-                )
-
-            if False and counter == 2:
-                await self.icmarkets.cancel_order(
-                    order_id="543142033",
-                )
-
-            if True and counter == 10:
-                order_ids = await self.icmarkets.cancel_all_orders_for_one_symbol(
-                    symbol="US500",
-                )
-                print(f"Closed all orders for symbol={symbol}, order_ids={order_ids}")
-                # self.icmarkets.orders = [d for d in self.icmarkets.orders if d["order_id"] not in order_ids]
-
-            if True and counter == 12:
-                order_ids = await self.icmarkets.cancel_all_orders_for_several_symbols(
-                    symbols=["BTCUSD", "US30", "XAUUSD"]
-                )
-                print(f"Closed all orders for symbols={symbols}, order_ids={order_ids}")
-
-            if True and counter == 20:
-                order_ids = await self.icmarkets.cancel_all_orders()
-                print(f"Closed all orders: order_ids={order_ids}")
-
-            await asyncio.sleep(5)
-            continue
 
     async def buy(self) -> None:
-        """Buy async when called, e.g. when buy button is clicked."""
-        # asyncio.create_task(self.icmarkets.buy())
-        asyncio.create_task(
-            self.icmarkets.set_order(
-                symbol="XAUUSD",
-                direction="buy",
-                order_type="limit",
-                quantity_to_trade=get_info_quantity_to_trade(symbol="XAUUSD")[0],
-                price=1900.0,
-                position_id=None,
+        """Create a buy function here as an example, but not really needed."""
+        for account_name in self.accounts:
+            asyncio.create_task(
+                self.accounts[account_name].set_order(
+                    symbol="XAUUSD",
+                    direction="buy",
+                    order_type="limit",
+                    quantity_to_trade=get_info_quantity_to_trade(symbol="XAUUSD")[0],
+                    price=1900.0,
+                    position_id=None,
+                )
             )
-        )
-        asyncio.create_task(
-            self.icmarkets.async_set_order(
-                symbol="XAUUSD",
-                direction="buy",
-                order_type="stop",
-                quantity_to_trade=get_info_quantity_to_trade(symbol="XAUUSD")[1],
-                price=2000.0,
-                position_id=None,
+            asyncio.create_task(
+                self.accounts[account_name].async_set_order(
+                    symbol="XAUUSD",
+                    direction="buy",
+                    order_type="stop",
+                    quantity_to_trade=get_info_quantity_to_trade(symbol="XAUUSD")[1],
+                    price=2000.0,
+                    position_id=None,
+                )
             )
-        )
-
-    async def closeall(self) -> None:
-        """Close all positions when called, e.g. when close all button is clicked."""
-        asyncio.create_task(self.icmarkets.closeall())
 
 
 def main() -> None:

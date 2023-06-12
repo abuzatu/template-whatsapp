@@ -2,7 +2,6 @@
 
 # python
 import asyncio
-from asyncio.streams import StreamReader, StreamWriter
 import json
 import random
 import re
@@ -72,10 +71,6 @@ class Broker:
     def __init__(
         self,
         credentials: Dict[str, str],
-        price_reader: Optional[StreamReader],
-        price_writer: Optional[StreamWriter],
-        trade_reader: Optional[StreamReader],
-        trade_writer: Optional[StreamWriter],
         price_sendersubid: str,
         trade_sendersubid: str,
         price_msgseqnum: int,
@@ -96,10 +91,6 @@ class Broker:
         self.type = credentials["type"]
         self.sendercompid = f"{self.type}.{self.broker}.{self.account}"
         #
-        self.price_reader = price_reader
-        self.price_writer = price_writer
-        self.trade_reader = trade_reader
-        self.trade_writer = trade_writer
         self.price_msgseqnum = price_msgseqnum
         self.trade_msgseqnum = trade_msgseqnum
         self.price_sendersubid = price_sendersubid
@@ -265,7 +256,7 @@ class Broker:
         direction: str,
         order_type: str,
         quantity_to_trade: int,
-        price: float,
+        price: Optional[float],
         position_id: Optional[str] = None,
     ) -> str:
         """Code to create a general order.
@@ -378,11 +369,11 @@ class Broker:
             else:
                 symbol_id = 0
             # quantity can be float for BTCUSD and ETHUSD as min is 0.01
-            if match := re.search("704=([\d.]+)\|", full_message):
+            if match := re.search("704=([\d.]+)\|", full_message):  # noqa
                 quantity_buy = float(match.group(1))
             else:
                 quantity_buy = 0.0
-            if match := re.search("705=([\d.]+)\|", full_message):
+            if match := re.search("705=([\d.]+)\|", full_message):  # noqa
                 quantity_sell = float(match.group(1))
             else:
                 quantity_sell = 0.0
@@ -395,7 +386,7 @@ class Broker:
             else:
                 raise ValueError
             #
-            if match := re.search("730=([\d.]+)\|", full_message):
+            if match := re.search("730=([\d.]+)\|", full_message):  # noqa
                 cost_price = float(match.group(1))
             else:
                 cost_price = 0.0
@@ -437,17 +428,17 @@ class Broker:
             else:
                 symbol_id = 0
             #
-            if match := re.search("38=([\d.]+)\|", full_message):
+            if match := re.search("38=([\d.]+)\|", full_message):  # noqa
                 quantity_ordered = float(match.group(1))
             else:
                 quantity_ordered = 0.0
             #
-            if match := re.search("14=([\d.]+)\|", full_message):
+            if match := re.search("14=([\d.]+)\|", full_message):  # noqa
                 quantity_filled = float(match.group(1))
             else:
                 quantity_filled = 0.0
             #
-            if match := re.search("151=([\d.]+)\|", full_message):
+            if match := re.search("151=([\d.]+)\|", full_message):  # noqa
                 quantity_not_filled = float(match.group(1))
             else:
                 quantity_not_filled = 0.0
@@ -494,12 +485,12 @@ class Broker:
             else:
                 order_type = None
             #
-            if match := re.search("44=([\d.]+)\|", full_message):
+            if match := re.search("44=([\d.]+)\|", full_message):  # noqa
                 price_limit = float(match.group(1))
             else:
                 price_limit = None
             #
-            if match := re.search("99=([\d.]+)\|", full_message):
+            if match := re.search("99=([\d.]+)\|", full_message):  # noqa
                 price_stop = float(match.group(1))
             else:
                 price_stop = None
@@ -578,7 +569,7 @@ class Broker:
 
     """Login to price and trade streams."""
 
-    async def price_login(self):
+    async def price_login(self) -> None:
         """Login to price stream on port 5201.
 
         So far supporting only one asset.
@@ -614,7 +605,7 @@ class Broker:
             await asyncio.sleep(1)
             print(f"PRICE connection refused login error! exception={e}.")
 
-    async def trade_login(self):
+    async def trade_login(self) -> None:
         """Login to trade stream on port 5202."""
         try:
             print(f"Logging into broker='{self.broker}' for TRADE stream...")
@@ -910,11 +901,13 @@ class Broker:
         positions = [d for d in self.positions if d["position_id"] == position_id]
         if len(positions) == 0:
             print(
-                f"WARNING!!! position_id={position_id} not found, so can not close. self.positions={self.positions}"
+                f"WARNING!!! position_id={position_id} not found, "
+                f"so can not close. self.positions={self.positions}"
             )
-            return
+            return []
 
         positions = [d for d in self.positions if d["position_id"] == position_id]
+        position_ids = [d["position_id"] for d in positions]
         fix_close_positions = ""
         for d in positions:
             fix_close_positions += self.fix_set_order(
@@ -935,6 +928,7 @@ class Broker:
                 f"Unable to close position of position_id={position_id}, "
                 f"on {self.broker}, with exception={e}."
             )
+        return position_ids
 
     async def close_all_positions_for_one_symbol(
         self,
@@ -961,22 +955,11 @@ class Broker:
     async def close_all_positions(
         self,
     ) -> List[str]:
-        """Close all positions"""
+        """Close all positions."""
         position_ids = [d["position_id"] for d in self.positions]
         for position_id in position_ids:
             await self.close_position(position_id)
         return position_ids
-
-    async def closeall(self) -> None:
-        """Closes all positions related to the symbol (that is in the app)."""
-        ca = ""
-        for p in self.positions:
-            ca += self.fix_sell_market_order(p)
-        try:
-            self.trade_writer.write(bytes(ca, "UTF-8"))
-        except Exception as e:
-            print(f"Unable to close all positions {self.broker}! {e}")
-        self.positions.clear()
 
     async def read_price_data(self) -> None:
         """Reads data asynchronously from the price stream."""
@@ -985,12 +968,12 @@ class Broker:
             # await asyncio.sleep(2)
             try:
                 # print("Read price data first 16 bytes that represent the header")
-                header = await self.price_reader.read(16)
+                header_bytes = await self.price_reader.read(16)
                 # print(f"header={header}")
-                header = header.decode().replace("\u0001", "|")
+                header = header_bytes.decode().replace("\u0001", "|")
                 # print(f"header={header}")
-                if index := re.search("9=(\\d+)", header):
-                    index = int(index.group(1))
+                if match := re.search("9=(\\d+)", header):
+                    index = int(match.group(1))
                     ti = index - 1 if index < 100 else index
                     # print(f"ti={ti}, then read the following 7 in second")
                     second = await self.price_reader.read(ti + 7)
@@ -1035,11 +1018,11 @@ class Broker:
         while True:
             try:
                 # print("Read trade data: Read first 16 bytes that represent the header")
-                header = await self.trade_reader.read(16)
-                header = header.decode().replace("\u0001", "|")
+                header_bytes = await self.trade_reader.read(16)
+                header = header_bytes.decode().replace("\u0001", "|")
                 # print(f"header={header}")
-                if index := re.search("9=(\\d+)", header):
-                    index = int(index.group(1))
+                if match := re.search("9=(\\d+)", header):
+                    index = int(match.group(1))
                     ti = index - 1 if index < 100 else index
                     # print(f"ti={ti}, then read the following 7 in second")
                     second = await self.trade_reader.read(ti + 7)
@@ -1081,11 +1064,13 @@ class Broker:
                             self.num_opened_orders = d["num_opened_orders"]
                     elif "35=j" in full_message:
                         print(
-                            f"trade response order CANCEL FAILURE: full_message={full_message}"
+                            f"trade response order CANCEL FAILURE: "
+                            f"full_message={full_message}"
                         )
                     else:
                         print(
-                            f"trade response order UNKNOWN CATEGORY: full_message={full_message}"
+                            f"trade response order UNKNOWN CATEGORY: "
+                            f"full_message={full_message}"
                         )
 
                     # print(
