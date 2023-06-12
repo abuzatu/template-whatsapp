@@ -6,7 +6,6 @@ from bs4.element import Tag
 import pandas as pd
 from pathlib import Path
 from pprint import pformat
-import re
 import time
 from typing import Dict, List
 

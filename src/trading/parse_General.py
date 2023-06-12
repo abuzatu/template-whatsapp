@@ -5,7 +5,7 @@ so that we can maintain easily to send to a particular account messages
 from different providers.
 
 The common cleaning:
-o transform to an empty space all symbols: comma, %, = 
+o transform to an empty space all symbols: comma, %, =
 o replace new lines with spaces so all is on one line
 o remove all the empty spaces
 o put all in capital letters
@@ -20,20 +20,28 @@ o assume each order to open starts with BUY or SELL
 Then close order
 - after that we do close
 - we should also close with just CLOSE GOLD
- 
+
 Then update or modify, usually for TP or SL
- 
+
 Then just information.
- 
+
 We would like to identify the categories early on and process them generally.
 """
 
 import re
-from typing import List
+from typing import Any, List
 
 from trading.order import Order
 from utils.logger import request_logger
 
+"""Configurations."""
+
+SEGMENTS = [
+    "FOREX",
+    "COMEX",
+    "CRYPTO (SPOT)",
+    "INDEX",
+]
 
 KEYWORDS_OPEN = [
     "BUY",
@@ -69,7 +77,19 @@ KEYWORDS_CLOSE = [
     "OR",
 ]
 
-KEYWORDS = ["TP", "SL", "CMP"] + KEYWORDS_OPEN
+KEYWORDS_PRICES = ["TP", "SL", "CMP"]
+
+KEYWORDS = KEYWORDS_PRICES + KEYWORDS_OPEN
+
+DICT_WORD_SYMBOL = {
+    "GOLD": "XAUUSD",
+    "OIL": "XTIUSD",
+    "WTI": "XTIUSD",
+    "NASDAQ": "USTEC",
+    "GER40": "DE40",
+}
+
+"""Functions."""
 
 
 def if_text_starts_with_any_of_prefixes(text: str, prefixes: List[str]) -> bool:
@@ -88,16 +108,9 @@ def if_text_contains_any_of_words(text: str, words: List[str]) -> bool:
     return result
 
 
-dict_word_symbol = {
-    "GOLD": "XAUUSD",
-    "OIL": "XTIUSD",
-    "WTI": "XTIUSD",
-}
-
-
 def get_symbol(word: str) -> str:
     """Get symbol."""
-    return word if word not in dict_word_symbol.keys() else dict_word_symbol[word]
+    return word if word not in DICT_WORD_SYMBOL.keys() else DICT_WORD_SYMBOL[word]
 
 
 dict_action_suffix_type = {
@@ -138,10 +151,49 @@ class Parse_General:
             "BUY GOLD 2006, TP 2016, SL 1997",
             "BUY US30 33670, TP 33945, SL 33435",
             "SELL US30 33480, TP 33210, SL 33735",
+            "SELL GER40 15917, TP 15690, SL 16130",
+            "SELL US30 33670 , TP 33450 , SL 33870",
+            "SELL GOLD 1964, TP 1940, SL 1983",
+            "BUY GOLD 1956, TP 1973, SL 1941",
+            "BUY GOLD 1960, TP 1974, SL 1949",
         ]
 
         # action: open order to trade v2 - Akib for forex
         self.examples_open_v2 = [
+            """
+            Buy.... Nzd/Jpy....@84.934....
+            Target=85.778.... StopLoss=84.130
+
+            Sell..... Eur/Chf....@0.97044..
+            Target=0.96676... StopLoss=0.97407
+
+            Sell..... Eur/Aud...@1.61011..
+            Target=1.59939... StopLoss=1.62058
+            """,
+            """
+            Sell..... Gbp/Cad...@1.66458..
+            Target=1.65773.... StopLoss=1.66458
+            """,
+            """
+            Sell... Eur/Aud...@1.60009...
+            Target=1.59011... StopLoss=1.61025
+            """,
+            """Sell..... Wti.... @72.282.....
+            Target=69.202.... StopLoss=75.295
+            """,
+            """
+            Buy..... Chf/Jpy...@155.042...
+            Target=155.816... StopLoss=154.299
+
+            Buy... Gbp/Jpy....@175.043..
+            Target=175.974... StopLoss=174.112
+            """,
+            "SELL GOLD 1964, TP 1951, SL 1973",
+            "SELL OIL 71.71, TP 68.58, SL 74.25",
+            "Buy.... Nzd/Cad...@0.81872.. Target=0.82597... StopLoss=0.81157",
+            "Buy.... Gbp/Nzd....@2.04850.. Target=2.03085...StopLoss=2.0348",
+            "Sell.. Gbp/Nzd...@2.04850.. Target=2.03085... StopLoss=2.06482",
+            "Buy.... Gold... @1965..... Target=1996.... StopLoss=1936.",
             "Sell.... Nzd/Jpy...@85.217....Target=83.910... StopLoss=86.511 Sell..... Aud/Jpy.....@91.193...Target=90.424.... StopLoss=91.950 Sell.... Chf/Jpy.....@153.486..Target=152.674... StopLoss=154.256",  # noqa
             "Buy... US30...... @33565.... Target=33870... StopLoss=33296",
             """
@@ -396,12 +448,27 @@ class Parse_General:
             STOP LOSS 1958
             CMP 1964.70
 
-            FOREX 
+            FOREX
             BUY STOP GBPUSD @ 1.2558
             TARGET 1  1.2578
             TARGET 2  1.2598
             STOP LOSS 1.2532
             CMP 1.2557
+            """,
+            """
+            COMEX
+            BUY STOP XAUUSD @ 1959
+            TARGET 1  1964
+            TARGET 2  1969
+            STOP LOSS 1952
+            CMP 1958.90
+
+            INDEX
+            BUY STOP NASDAQ @ 14610
+            TARGET 1  14660
+            TARGET 2  14710
+            STOP LOSS 14540
+            CMP 14601
             """,
         ]
 
@@ -448,15 +515,15 @@ class Parse_General:
             ⚡ SL 1975
             """,
             """
-            Gold sell  1958 1960 
+            Gold sell  1958 1960
             TP  1954
             TP  1952
             TP  1950
             SL 1967
             """,
             """
-            GOLD BUY 1944 
-            Tp  1950 
+            GOLD BUY 1944
+            Tp  1950
             Sl 1936
             """,
         ]
@@ -530,7 +597,33 @@ class Parse_General:
             "CLOSE GOLD",
         ]
 
-        # action: close trade v1 - just two words
+        # action: close trade v2 - PipsGainer Researcher
+        self.examples_close_v2 = [
+            "EURUSD AND GOLD TP HIT",
+            "Have you closed it?",
+            "BOTH SIGNALS TP HIT",
+            "TP HIT",
+            "Kindly book profit in nasdaq now",
+            "TP 1 ,2 hit",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+        ]
+
+        # action: close trade v1 - phrases that contain also buy or sell or close
         self.examples_regular_v1 = [
             "Now I will say buy gold and you will see that it buys",
             "Now I will say sell gold and you will see that it sells",
@@ -538,19 +631,59 @@ class Parse_General:
             "You should use buy or sell market order, but not buy_limit or stop_limit.",
         ]
 
+        self.examples_modify_v1 = [
+            "Set target price at 0.8200 in nzdcad",
+            "Set target price at 2.0465 in gbpcad",
+            "Set target price at 1970 in gold",
+            "set target price at 154.80 in chfjpy",
+            "Set target price at 1961 in gold",
+            "Set target price at 72.00 in oil",
+            "Set target price at 0.5980 in nzdusd",
+            """
+            set target price at 15890 in de40
+
+            set target price at 33640 in us30
+
+            set target price at 1.5980 in EURAUD
+            """,
+            """
+            modify target price at 1.6630 in gbpcad
+            
+            modify target price at 85.10 in nzdjpy
+            """,
+            """
+            modify target price at 1.598 in euraud
+
+            modify target price at 1.6640 in gbpcad
+            """,
+            """
+            modify target price at 1.6630 in gbpcad
+
+            modify target price at 85.10 in nzdjpy
+            """,
+            """
+            set target price at 0.9120 in usdchf 
+
+            set target price at 1.0680 in eurusd
+
+            set target price at 1.09015 in audnzd
+            """,
+        ]
+
         self.examples = (
             []
             # + self.examples_open_v1
             # + self.examples_open_v2
             # + self.examples_open_v3
-            + self.examples_open_v4
+            # + self.examples_open_v4
             # + self.examples_open_v5
             # + self.examples_open_v6
-            # self.examples_modify
             # + self.examples_close_v1
             # + self.examples_close_v1
-            # self.examples_announcement
+            # + self.examples_close_v2
+            # + self.examples_announcement
             # + self.examples_regular_v1
+            + self.examples_modify_v1
         )
 
     def fit_examples(self) -> None:
@@ -661,7 +794,7 @@ class Parse_General:
 
         # Pips Gainer Research sometimes give at beginning the segment
         # we want to remove it
-        for segment in ["FOREX", "COMEX", "CRYPTO (SPOT)"]:
+        for segment in SEGMENTS:
             text = text.replace(f"{segment} ", "")
 
         # remove some filling words not relevant, e.g. AGAIN
@@ -753,7 +886,7 @@ class Parse_General:
         # )
         # check the symbol
         o.symbol = get_symbol(symbol)
-        # print(f"o.symbol={o.symbol}")
+        # print(f"symbol={symbol}, o.symbol={o.symbol}")
         # now the first two words are done, so we can drop them
         words_reduced = words[2:]
         # print(f"words_reduced={words_reduced}")
@@ -762,17 +895,17 @@ class Parse_General:
         words = []
         for word in words_reduced:
             try:
-                word = float(word)
+                my_word: Any = float(word)
             except ValueError:
                 # remains string
-                word = word
-            words.append(word)
+                my_word = word
+            words.append(my_word)
         # print(f"words={words}")
 
         # next come one or more float numbers that represent the entry prices
         # find the first numbers and append to the entry prices
         # when first string is found, stop
-        numbers = []
+        numbers: List[float] = []
         for word in words:
             if isinstance(word, float):
                 numbers.append(word)
@@ -788,7 +921,7 @@ class Parse_General:
         # add these in the field of entry prices
         o.EPs = numbers
         # now we can remove these elements
-        words = words[len(numbers) :]
+        words = words[len(numbers) :]  # noqa
         # print(f"words={words}")
 
         # if "NOW" still present, remove it
@@ -862,16 +995,16 @@ class Parse_General:
         words = []
         for word in words_all:
             try:
-                word = float(word)
+                my_word: Any = float(word)
             except ValueError:
                 # remains string
-                word = word
-            words.append(word)
+                my_word = word
+            words.append(my_word)
         # print(f"words={words}")
 
         # count the number of floats we have, if only one, assign it as the CMP
         words_all = words[:]
-        numbers = []
+        numbers: List[float] = []
         words = []
         for word in words_all:
             if isinstance(word, float):
