@@ -698,7 +698,10 @@ class ReadMessages:
     async def trade_async(self, o: Order) -> None:
         """Trade based on the order received."""
         print("Start trade")
-        if o.author == "PGV":
+        if True:
+            # have all into one account for test if it works more reliably
+            account_names = ["PMT-1"]
+        elif o.author == "PGV":
             # Pips Gainer Vinay
             account_names = ["Vinay"]
         elif o.author == "PGH" or o.author == "PGR" or o.author == "ME2":
