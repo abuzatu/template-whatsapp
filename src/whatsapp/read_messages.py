@@ -57,7 +57,9 @@ from configs.ctrader_demo import (
 # get one account from the config
 CONFIG_FILE_NAME = f"{work_dir()}/src/configs/config_accounts.yaml"
 
-account_names = ["PGR", "Vinay", "PMT-1", "PMT-2"]
+# account_names = ["PGR", "Vinay", "PMT-1", "PMT-2"]
+account_names = ["PGR", "Vinay", "PMT-1"]
+
 
 # Open the YAML file
 with open(CONFIG_FILE_NAME, "r") as file:
@@ -778,7 +780,8 @@ class ReadMessages:
             account_names = ["PGR"]
         elif o.author == "PMT" or o.author == "ME1":
             # Paramount Info Tech or ME1
-            account_names = ["PMT-1", "PMT-2"]
+            # account_names = ["PMT-1", "PMT-2"]
+            account_names = ["PMT-1"]
         else:
             account_names = ["Vinay"]
 
