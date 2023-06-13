@@ -60,8 +60,8 @@ DO_CTRADER = True
 CONFIG_FILE_NAME = f"{work_dir()}/src/configs/config_accounts.yaml"
 
 # account_names = ["PGR", "Vinay", "PMT-1", "PMT-2"]
-account_names = ["PGR", "Vinay", "PMT-1"]
-# account_names = ["PMT-1"]
+# ccount_names = ["PGR", "Vinay", "PMT-1"]
+account_names = ["PMT-1"]
 
 
 # Open the YAML file
@@ -243,7 +243,12 @@ class ReadMessages:
                                     f"len(positions) = {len(self.accounts[account_name].positions)}."
                                 )
                                 # print(f"positions = {self.accounts[account_name].positions}")
-                                for position in self.accounts[account_name].positions:
+                                sorted_positions = sorted(
+                                    self.accounts[account_name].positions,
+                                    key=lambda x: x["position_id"],
+                                    reverse=True,
+                                )
+                                for position in sorted_positions:
                                     print(f"position = {position}")
                             # orders
                             if DO_CTRADER and False:
@@ -385,7 +390,7 @@ class ReadMessages:
                                 # continue
                                 # act on the order
                                 try:
-                                    await self.trade_async(o)
+                                    asyncio.create_task(self.trade_async(o))
                                 except RuntimeError:
                                     print(f"WARNING! Not able to trade for order o={o}")
                     request_logger.debug("End receive_messages()")
@@ -717,10 +722,6 @@ class ReadMessages:
         # do the trade
         if o.action == "open":
             for account_name in account_names:
-                print(
-                    f"****  Opening in account={account_name} an order "
-                    f"for symbol={o.symbol} with order o={o} ******"
-                )
                 asyncio.create_task(
                     self.accounts[account_name].set_order(
                         symbol=o.symbol,
@@ -732,22 +733,19 @@ class ReadMessages:
                     )
                 )
                 print(
-                    f"****  Opened in account={account_name} and order "
+                    f"***** Created task in account={account_name} for an order "
                     f"for symbol={o.symbol} with order o={o} ******"
                 )
         elif o.action == "close":
             for account_name in account_names:
-                print(
-                    f"****  Closing in account={account_name} the positions "
-                    f"for symbol={o.symbol} with order o={o} ******"
+                asyncio.create_task(
+                    self.accounts[account_name].close_all_positions_for_one_symbol(
+                        o.symbol
+                    )
                 )
-                position_ids = await self.accounts[
-                    account_name
-                ].close_all_positions_for_one_symbol(o.symbol)
                 print(
-                    f"***** Closed in account={account_name} the positions "
-                    f"for symbol={o.symbol}: "
-                    f"position_ids={position_ids} ****"
+                    f"***** Created task in account={account_name} to close the positions "
+                    f"for symbol={o.symbol}. **********"
                 )
         else:
             print(f"Action {o.action} not known, need open or close, for order = {o}")

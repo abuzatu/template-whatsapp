@@ -904,14 +904,14 @@ class Broker:
     async def close_position(
         self,
         position_id: str,
-    ) -> List[str]:
+    ) -> None:
         """Close a position by creating a market order of oppoiste sign same quantity."""
         print(f"In close_position, self.positions={self.positions}")
         positions = [d for d in self.positions if d["position_id"] == position_id]
-        if len(positions)==0:
+        if len(positions) == 0:
             await asyncio.sleep(0.001)
             positions = [d for d in self.positions if d["position_id"] == position_id]
-        if len(positions)==0:
+        if len(positions) == 0:
             await asyncio.sleep(0.001)
             positions = [d for d in self.positions if d["position_id"] == position_id]
         if len(positions) == 0:
@@ -919,9 +919,8 @@ class Broker:
                 f"WARNING!!! position_id={position_id} not found, "
                 f"so can not close. self.positions={self.positions}"
             )
-            return []
+            return
 
-        positions = [d for d in self.positions if d["position_id"] == position_id]
         position_ids = [d["position_id"] for d in positions]
         fix_close_positions = ""
         for d in positions:
@@ -937,14 +936,13 @@ class Broker:
             self.print_fix_message("fix_close_positions", fix_close_positions)
             self.trade_writer.write(bytes(fix_close_positions, "UTF-8"))
             # remove from the list of positions
-            await asyncio.sleep(0.1)
-            d = [
-                d for d in self.positions if d["position_id"] == position_id
-            ][0]
-            self.positions.remove(d)
+            # wait asyncio.sleep(0.1)
+            ds = [d for d in self.positions if d["position_id"] in position_ids]
+            for d in ds:
+                self.positions.remove(d)
             # self.positions = [
             #    d for d in self.positions if d["position_id"] != position_id
-            #]
+            # ]
             # self.position_ids.discard(position_id)
             # also close all orders for that position
             # await self.cancel_all_orders_for_one_position(position_id)
@@ -953,40 +951,36 @@ class Broker:
                 f"Unable to close position of position_id={position_id}, "
                 f"on {self.broker}, with exception={e}."
             )
-        return position_ids
 
     async def close_all_positions_for_one_symbol(
         self,
         symbol: str,
-    ) -> List[str]:
+    ) -> None:
         """Close all positions for one symbol."""
         print(f"In close_all_positions_for_one_symbol, self.positions={self.positions}")
         position_ids = [d["position_id"] for d in self.positions if d["symbol"] == symbol]
         for position_id in position_ids:
             print(f"Closing position_id={position_id}")
-            await self.close_position(position_id)
-        return position_ids
+            asyncio.create_task(self.close_position(position_id))
 
     async def close_all_positions_for_several_symbols(
         self,
         symbols: List[str],
-    ) -> List[str]:
+    ) -> None:
         """Close all positions for several symbols."""
         position_ids = [
             d["position_id"] for d in self.positions if d["symbol"] in symbols
         ]
         for position_id in position_ids:
-            await self.close_position(position_id)
-        return position_ids
+            asyncio.create_task(self.close_position(position_id))
 
     async def close_all_positions(
         self,
-    ) -> List[str]:
+    ) -> None:
         """Close all positions."""
         position_ids = [d["position_id"] for d in self.positions]
         for position_id in position_ids:
-            await self.close_position(position_id)
-        return position_ids
+            asyncio.create_task(self.close_position(position_id))
 
     async def read_price_data(self) -> None:
         """Reads data asynchronously from the price stream."""
