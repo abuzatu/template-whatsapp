@@ -665,11 +665,11 @@ class Broker:
             try:
                 #
                 fix_trade_heartbeat = self.fix_heartbeat_to_a_stream("TRADE")
-                self.print_fix_message("fix_trade_heartbeat", fix_trade_heartbeat)
+                # self.print_fix_message("fix_trade_heartbeat", fix_trade_heartbeat)
                 fix_request_positions = self.fix_request_positions()
-                self.print_fix_message("fix_request_positions", fix_request_positions)
+                # self.print_fix_message("fix_request_positions", fix_request_positions)
                 fix_request_orders = self.fix_request_orders()
-                self.print_fix_message("fix_request_orders", fix_request_orders)
+                # self.print_fix_message("fix_request_orders", fix_request_orders)
                 #
                 fix_message = ""
                 fix_message += fix_trade_heartbeat
