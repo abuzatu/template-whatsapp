@@ -16,6 +16,8 @@ dict_symbol_volume = {
     "USTEC": 1.0,
     # oil min volume 0.5 lot
     "XTIUSD": 0.5,
+    # gold
+    "XAUUSD": 0.05,
 }
 
 

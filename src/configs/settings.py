@@ -102,7 +102,7 @@ WAIT_FOR_QR_CODE_SCAN = 100  # seconds
 
 WAIT_FOR_SEARCH_BOX = 100  # seconds
 
-WAIT_AFTER_EACH_CONTACT = 0.1  # seconds
+WAIT_AFTER_EACH_CONTACT = 1  # seconds
 
 # skip the first 2 rounds as you start, as it refers to previous messages
 NUM_FIRST_COUNTERS_TO_SKIP = 2  # number

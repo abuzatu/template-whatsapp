@@ -645,7 +645,7 @@ class Broker:
             try:
                 #
                 fix_price_heartbeat = self.fix_heartbeat_to_a_stream("QUOTE")
-                self.print_fix_message("fix_price_heartbeat", fix_price_heartbeat)
+                # self.print_fix_message("fix_price_heartbeat", fix_price_heartbeat)
                 #
                 fix_message = ""
                 fix_message += fix_price_heartbeat
@@ -676,8 +676,8 @@ class Broker:
                 fix_message += fix_request_positions
                 fix_message += fix_request_orders
                 #
-                self.positions = []
-                self.orders = []
+                # self.positions = []
+                # self.orders = []
                 #
                 self.trade_writer.write(bytes(fix_message, "UTF-8"))
             except Exception as e:
@@ -798,7 +798,7 @@ class Broker:
         # remove all the orders that have order_id we want
         # usually it should be only one, but just in case
         # use list comprehension to be faster and more concise
-        # self.orders = [d for d in self.orders if d["order_id"] != order_id]
+        self.orders = [d for d in self.orders if d["order_id"] != order_id]
 
     async def cancel_all_orders_for_one_position(
         self,
@@ -898,6 +898,7 @@ class Broker:
         position_id: str,
     ) -> List[str]:
         """Close a position by creating a market order of oppoiste sign same quantity."""
+        print(f"In close_position, self.positions={self.positions}")
         positions = [d for d in self.positions if d["position_id"] == position_id]
         if len(positions) == 0:
             print(
@@ -921,6 +922,10 @@ class Broker:
         try:
             self.print_fix_message("fix_close_positions", fix_close_positions)
             self.trade_writer.write(bytes(fix_close_positions, "UTF-8"))
+            # remove from the list of positions
+            self.positions = [
+                d for d in self.positions if d["position_id"] != position_id
+            ]
             # also close all orders for that position
             await self.cancel_all_orders_for_one_position(position_id)
         except Exception as e:
@@ -935,8 +940,10 @@ class Broker:
         symbol: str,
     ) -> List[str]:
         """Close all positions for one symbol."""
+        print(f"In close_all_positions_for_one_symbol, self.positions={self.positions}")
         position_ids = [d["position_id"] for d in self.positions if d["symbol"] == symbol]
         for position_id in position_ids:
+            print(f"Closing position_id={position_id}")
             await self.close_position(position_id)
         return position_ids
 

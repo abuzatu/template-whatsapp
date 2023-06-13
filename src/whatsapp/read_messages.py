@@ -1,6 +1,8 @@
 """Read latest messages in a loop."""
 
 # python
+import asyncio
+from asyncio.events import AbstractEventLoop
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 import pandas as pd
@@ -8,6 +10,7 @@ from pathlib import Path
 from pprint import pformat
 import time
 from typing import Dict, List
+import yaml
 
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
@@ -16,7 +19,10 @@ from selenium.webdriver.common.keys import Keys
 
 # our modules
 from cli.cli_send_message import CLI
+from configs.settings import work_dir
+from configs.assets import get_info_quantity_to_trade
 from ctrader.ctrader import CTrader, get_volume_symbol
+from ctrader_fix_asyncio.broker import Broker
 from utils.logger import request_logger
 from trading.order import Order
 from trading.parse_InvestorsWizard import Parse_InvestorsWizard
@@ -48,15 +54,68 @@ from configs.ctrader_demo import (
     DEBUG,
 )
 
+# get one account from the config
+CONFIG_FILE_NAME = f"{work_dir()}/src/configs/config_accounts.yaml"
+ACCOUNT_NAME = (
+    "Hishal"
+    # "Vinay"
+    # "PMT"
+)
+account_names = ["Hishal", "Vinay", "PMT"]
+
+# Open the YAML file
+with open(CONFIG_FILE_NAME, "r") as file:
+    # Load the YAML content
+    yaml_data = yaml.load(file, Loader=yaml.FullLoader)
+credentials = [c for c in yaml_data["accounts"] if c["name"] == ACCOUNT_NAME][0]
+
 
 class ReadMessages:
     """Class ReadMessages."""
 
-    def __init__(self) -> None:
+    def __init__(self, loop: AbstractEventLoop) -> None:
         """Initialize."""
+        # the async event loop
+        self.loop = loop
+        # create the connection to several accounts
+        self.accounts = {}
+        for account_name in account_names:
+            credentials = [c for c in yaml_data["accounts"] if c["name"] == account_name][
+                0
+            ]
+            self.accounts[account_name] = Broker(
+                credentials=credentials,
+                price_sendersubid=None,
+                trade_sendersubid=None,
+                price_msgseqnum=1,
+                trade_msgseqnum=1,
+                bid=0.0,
+                ask=0.0,
+                positions=[],
+                num_opened_positions=0,
+                orders=[],
+                num_opened_orders=0,
+            )
+            # for now we receive the prices for just one symbol
+            self.accounts[account_name].set_asset(symbol="EURUSD")
+        print("Demo FIX API Application - 2023")
+        time.sleep(1)
+        print("Create task for self.login()")
+        self.loop.create_task(self.login())
+        time.sleep(1)
+        print("End init of Window()")
+
+    async def set_driver(self) -> None:
+        """Set driver."""
+        # chrome driver
+        print("Start the Chrome Driver")
         self.driver = Driver().fit()
+        # self.driver = await asyncio.to_thread(Driver().fit())
+        print("A")
         self.driver.get("https://web.whatsapp.com")
+        print("B")
         request_logger.debug("ReadMessages.init() is done.")
+        print("C")
 
     def set_inputs_manually(
         self,
@@ -77,7 +136,98 @@ class ReadMessages:
         result = "From CLI retrieved: " f"contacts='{self.contacts}', "
         return result
 
-    def quit_driver(self) -> None:
+    async def login(self) -> None:
+        """For each of the accounts login to price and trade streams.
+
+        The prices will come back every time there is a change.
+        TO DO: not clear yet how. subscribe to several assets at the same time.
+        Or how can I stop a subscription to start later a new one with other assets?
+
+        The requests for positions and orders are sent at every heartbeat,
+        then the ansewrs can come right away.
+        """
+        if True:
+            print("A")
+            # login to the price streams for all brokers
+            for account_name in self.accounts:
+                print("B")
+                asyncio.create_task(self.accounts[account_name].price_login())
+        if True:
+            # login to the trade streams for all brokers
+            for account_name in self.accounts:
+                asyncio.create_task(self.accounts[account_name].trade_login())
+        await asyncio.sleep(0)
+
+    async def show(self) -> None:
+        """The main while loop that keeps repeating.
+
+        Originally it was the show window when created in the event loop.
+
+        But no window for now. So we just wait.
+        """
+        # await asyncio.sleep(500)
+        counter = 0
+        while True:
+            counter += 1
+            # print("I am in show() - the for loop, refresh every 3 seconds.")
+            print()
+            print("************************************")
+            print(f"******* COUNTER ={counter} ********")
+            print("************************************")
+
+            for account_name in self.accounts:
+                # prices
+                if True:
+                    print(
+                        f"ACCOUNT={account_name}, prices: "
+                        f"asset={self.accounts[account_name].symbol}, "
+                        f"bid={self.accounts[account_name].bid}, "
+                        f"ask={self.accounts[account_name].ask}"
+                    )
+                # positions
+                if True:
+                    print(
+                        f"ACCOUNT={account_name}, positions: "
+                        f"num_opened_positions = "
+                        f"{self.accounts[account_name].num_opened_positions}, "
+                        f"len(positions) = {len(self.accounts[account_name].positions)}"
+                    )
+                    # print(f"positions = {self.accounts[account_name].positions}")
+                    for position in self.accounts[account_name].positions:
+                        print(f"position = {position}")
+                # orders
+                if True:
+                    print(
+                        f"ACCOUNT={account_name}, orders: "
+                        f"num_opened_orders = "
+                        f"{self.accounts[account_name].num_opened_orders}, "
+                        f"len(orders) = {len(self.accounts[account_name].orders)}"
+                    )
+                    # print(f"positions = {self.accounts[account_name].positions}")
+                    for order in self.accounts[account_name].orders:
+                        print(f"order = {order}")
+
+                if True and counter == 2:
+                    await self.accounts[account_name].set_order_examples(
+                        symbol="AUDUSD",
+                        price_low=0.6700,
+                        price_high=0.6800,
+                        num_repeats=1,
+                    )
+
+                if True and counter == 5:
+                    position_ids = await self.accounts[account_name].close_all_positions()
+                    print(f"Closed all positions: position_ids={position_ids}")
+
+                if True and counter == 6:
+                    order_ids = await self.accounts[account_name].cancel_all_orders()
+                    print(f"Closed all orders: order_ids={order_ids}")
+
+                continue
+            # wait 5 seconds for the current counter
+            await asyncio.sleep(5)
+
+    async def quit_driver(self) -> None:
         """Quit driver (closes all windows).
 
         Without this, the next restart will be very slow to create the driver.
@@ -89,7 +239,7 @@ class ReadMessages:
         except Exception as e:
             request_logger.debug(f"Driver is already quitted: {e}")
 
-    def fit(self) -> None:
+    async def fit(self) -> None:
         """Fit. Read the messages of all contacts in a loop.
 
         Read once to each contact, and see if there is a new message.
@@ -103,6 +253,8 @@ class ReadMessages:
         already and see if they are there, and only if new messages to process them
         and then store then back.
         """
+
+        await asyncio.sleep(0)
         # counting the number of loops we did across all contacts since script started
         counter = 0
         # storing the list of messages for each contact
@@ -134,6 +286,10 @@ class ReadMessages:
             while True:
                 # increase the counter of the loop to keep track
                 counter += 1
+                print()
+                print("************************************")
+                print(f"******* COUNTER ={counter} ********")
+                print("************************************")
                 if counter < 10 or counter % 10 == 0:
                     # pass
                     print(f"... {str(counter).zfill(3)}, {pd.Timestamp.now()}")
@@ -141,13 +297,68 @@ class ReadMessages:
                 for contact in self.contacts:
                     # if the first loop, then create an empty list
                     # then we can append messages to it
+                    print(f"counter={counter}, contact={contact}")
                     if counter == 1:
                         dict_contact_messages[contact] = []
                     # we can choose to print a . for each loop, to let us know
                     # how fast the loops are progressing
-                    if counter % 1000 == 0:
+                    if counter % 1 == 0:
                         # pass
                         print(f"... {str(counter).zfill(3)}, {pd.Timestamp.now()}")
+                        for account_name in self.accounts:
+                            # prices
+                            if True:
+                                print(
+                                    f"ACCOUNT={account_name}, prices: "
+                                    f"asset={self.accounts[account_name].symbol}, "
+                                    f"bid={self.accounts[account_name].bid}, "
+                                    f"ask={self.accounts[account_name].ask}"
+                                )
+                            # positions
+                            if False:
+                                print(
+                                    f"ACCOUNT={account_name}, positions: "
+                                    f"num_opened_positions = "
+                                    f"{self.accounts[account_name].num_opened_positions}, "
+                                    f"len(positions) = {len(self.accounts[account_name].positions)}"
+                                )
+                            # print(f"positions = {self.accounts[account_name].positions}")
+                            for position in self.accounts[account_name].positions:
+                                print(f"position = {position}")
+                            # orders
+                            if False:
+                                print(
+                                    f"ACCOUNT={account_name}, orders: "
+                                    f"num_opened_orders = "
+                                    f"{self.accounts[account_name].num_opened_orders}, "
+                                    f"len(orders) = {len(self.accounts[account_name].orders)}"
+                                )
+                                # print(f"positions = {self.accounts[account_name].positions}")
+                                for order in self.accounts[account_name].orders:
+                                    print(f"order = {order}")
+
+                            if False and counter == 2:
+                                await self.accounts[account_name].set_order_examples(
+                                    symbol="AUDUSD",
+                                    price_low=0.6700,
+                                    price_high=0.6800,
+                                    num_repeats=1,
+                                )
+
+                            if False and counter == 5:
+                                position_ids = await self.accounts[
+                                    account_name
+                                ].close_all_positions()
+                                print(
+                                    f"Closed all positions: position_ids={position_ids}"
+                                )
+
+                            if False and counter == 6:
+                                order_ids = await self.accounts[
+                                    account_name
+                                ].cancel_all_orders()
+                                print(f"Closed all orders: order_ids={order_ids}")
+
                     if counter % 1 == 0:
                         request_logger.debug(
                             f"Start for contact={contact}, counter={counter}, "
@@ -158,17 +369,22 @@ class ReadMessages:
                     for i in range(len(dict_contact_messages[contact])):
                         message = dict_contact_messages[contact][i]
                         request_logger.debug(f"Already message i={i}: {message}")
+                    # await asyncio.sleep(3)
+                    # continue
                     request_logger.debug("Start search_box()")
-                    self.search_box(contact)
+                    await self.search_box(contact)
                     request_logger.debug("Start get_contact()")
-                    time.sleep(0)
-                    self.get_contact(contact)
+                    await asyncio.sleep(0)
+                    await self.get_contact(contact)
                     request_logger.debug("Start receive_messages()")
-                    time.sleep(0)
+                    await asyncio.sleep(0)
                     messages = self.receive_messages(
                         contact, counter, NUM_LATEST_MESSAGES_TO_READ
                     )
                     request_logger.debug(f"Getting back {len(messages)}:")
+
+                    # await asyncio.sleep(3)
+                    # continue
                     # loop through the messages and find those that are not yet processed
                     # for now using brute force to compare to all previous messages
                     for i in range(len(messages)):
@@ -180,7 +396,10 @@ class ReadMessages:
                             )
                             continue
                         # if here, the message is not in the list, so we process it
+                        print("******************************************************")
                         request_logger.info(f"New     message i={i}: {message}")
+                        print("******************************************************")
+                        # continue
                         # add to the dictionary of new message
                         dict_contact_messages[contact].append(message)
                         # check if the message can be interpret as a signal to trade
@@ -218,6 +437,12 @@ class ReadMessages:
                             request_logger.warning(
                                 f"contact{contact} not known, " "so can not build orders."
                             )
+                        print("************************************************")
+                        print("************************************************")
+                        print("************************************************")
+                        print("************************************************")
+                        print("************************************************")
+                        print("************************************************")
                         request_logger.info("Showing orders built")
                         for i, o in enumerate(orders):
                             id_order += 1
@@ -225,12 +450,19 @@ class ReadMessages:
                             print(o)
                             # append to the file
                             file.write(o.__str__() + "\n")
+                        print("************************************************")
+                        print("************************************************")
+                        print("************************************************")
+                        print("************************************************")
+                        print("************************************************")
+                        print("************************************************")
+                        # continue
                         request_logger.info("Trading orders built")
                         for i, o in enumerate(orders):
                             # continue
                             # act on the order
                             try:
-                                self.trade(o)
+                                await self.trade_async(o)
                             except RuntimeError:
                                 print(f"WARNING! Not able to trade for order o={o}")
                     request_logger.debug("End receive_messages()")
@@ -242,14 +474,16 @@ class ReadMessages:
                             f"at datetime={pd.Timestamp.now()}, "
                             f"will wait {WAIT_AFTER_EACH_CONTACT} before next contact."
                         )
-                    time.sleep(WAIT_AFTER_EACH_CONTACT)
+                    await asyncio.sleep(WAIT_AFTER_EACH_CONTACT)
         except KeyboardInterrupt:
             request_logger.error("Ctrl+C was pressed, so stopping.")
+            print("Control-C")
         finally:
+            print("Closing")
             file.close()
-            self.quit_driver()
+            await self.quit_driver()
 
-    def search_box(self, contact: str) -> None:
+    async def search_box(self, contact: str) -> None:
         """Search box.
 
         Find the search box on top left, clear the content,
@@ -311,10 +545,10 @@ class ReadMessages:
         # box.send_keys(Keys.RETURN)
         # box.send_keys(contact, Keys.RETURN)
         box.send_keys(contact, Keys.SHIFT, Keys.RETURN)
-        time.sleep(1)
+        await asyncio.sleep(1)
         request_logger.debug(f"End search box: xpath={xpath}")
 
-    def get_contact(self, contact: str) -> None:
+    async def get_contact(self, contact: str) -> None:
         """Select the contact found.
 
         It is a span with the title of the contact.
@@ -326,7 +560,7 @@ class ReadMessages:
         )
         # click on it
         contact_element.click()
-        time.sleep(1)
+        await asyncio.sleep(1)
         request_logger.debug(f"End get_contact: xpath={xpath}")
 
     def receive_messages(self, contact: str, counter: int, N: int) -> List[Message]:
@@ -356,7 +590,7 @@ class ReadMessages:
         # latest message
         t = conversation.text
         request_logger.debug(f"type(t)={type(t)}, len(t)={len(t)}, t={t}")
-        # time.sleep(3)
+        # await asyncio.sleep(3)
         if SAVE_SCREENSHOT:
             self.driver.save_screenshot(f"./open/screenshot_{counter_str}.png")
         element_html = conversation.get_attribute("innerHTML")  # exact HTML content
@@ -485,7 +719,7 @@ class ReadMessages:
         request_logger.debug(f"message={message}")
         return message
 
-    def trade(self, o: Order) -> None:
+    async def trade(self, o: Order) -> None:
         """Trade based on the order received."""
         print("Start trade")
         if o.author == "PGV" or o.author == "PGH" or o.author == "ME2":
@@ -508,7 +742,7 @@ class ReadMessages:
             debug=DEBUG,
         )
         print("logged in")
-        time.sleep(1)
+        await asyncio.sleep(1)
         positions = api.positions()
         print(pformat(positions))
         # do the trade
@@ -531,9 +765,55 @@ class ReadMessages:
             api.close(symbol)
         else:
             print(f"Action {o.action} not known, need open or close, for {text}.")
-        time.sleep(1)
+        await asyncio.sleep(1)
         # close the connection
         api.logout()
-        time.sleep(2)
+        await asyncio.sleep(2)
+        # to be safe delete the api object
+        # del api
+
+    async def trade_async(self, o: Order) -> None:
+        """Trade based on the order received."""
+        print("Start trade")
+        if o.author == "PGV" or o.author == "PGH" or o.author == "ME2":
+            # Pigs Gainer Vinay
+            account_name = "Vinay"
+        elif o.author == "PMT" or o.author == "ME1":
+            account_name = "PMT"
+        else:
+            account_name = "Hishal"
+
+        # do the trade
+        if o.action == "open":
+            print(f"****  Opening order for symbol={o.symbol} with order o={o} ******")
+            asyncio.create_task(
+                self.accounts[account_name].set_order(
+                    symbol=o.symbol,
+                    direction=o.direction,
+                    order_type=o.type,
+                    quantity_to_trade=get_info_quantity_to_trade(o.symbol)[0],
+                    price=None if o.type == "market" else o.EPs[0],
+                    position_id=None,
+                )
+            )
+            print(f"****  Opened order for symbol={o.symbol} with order o={o} ******")
+        elif o.action == "close":
+            print(
+                f"****  Closing positions for symbol={o.symbol} with order o={o} ******"
+            )
+            position_ids = await self.accounts[
+                account_name
+            ].close_all_positions_for_one_symbol(o.symbol)
+            print(
+                f"***** Closed positions for symbol={o.symbol}: "
+                f"position_ids={position_ids} ****"
+            )
+            # api.close(symbol)
+        else:
+            print(f"Action {o.action} not known, need open or close, for order = {o}")
+        await asyncio.sleep(0.01)
+        # close the connection
+        # api.logout()
+        # await asyncio.sleep(2)
         # to be safe delete the api object
         # del api

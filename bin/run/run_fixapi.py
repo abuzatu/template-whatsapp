@@ -37,9 +37,8 @@ class App:
 
     async def exec(self) -> None:
         """This runs the for loop."""
-        self.window = Window(asyncio.get_event_loop())
-        # await self.window.buy()
-        await self.window.show()
+        window = Window(asyncio.get_event_loop())
+        await window.show()
 
 
 class Window:
@@ -47,6 +46,7 @@ class Window:
 
     def __init__(self, loop: AbstractEventLoop) -> None:
         """Init."""
+        # the async event loop
         self.loop = loop
         # create the connection to several accounts
         self.accounts = {}
@@ -103,6 +103,7 @@ class Window:
 
         But no window for now. So we just wait.
         """
+        await asyncio.sleep(5)
         counter = 0
         while True:
             counter += 1
@@ -152,11 +153,11 @@ class Window:
                         num_repeats=1,
                     )
 
-                if True and counter == 5:
+                if True and counter == 3:
                     position_ids = await self.accounts[account_name].close_all_positions()
                     print(f"Closed all positions: position_ids={position_ids}")
 
-                if True and counter == 6:
+                if True and counter == 4:
                     order_ids = await self.accounts[account_name].cancel_all_orders()
                     print(f"Closed all orders: order_ids={order_ids}")
 
@@ -269,7 +270,7 @@ class Window:
                     print(f"Closed all orders: order_ids={order_ids}")
 
             # wait 5 seconds for the current counter
-            await asyncio.sleep(5)
+            await asyncio.sleep(3)
 
     async def buy(self) -> None:
         """Create a buy function here as an example, but not really needed."""
