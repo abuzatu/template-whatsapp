@@ -7,7 +7,7 @@ import random
 import re
 import socket
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 # our modules
 from configs.assets import assets_all, DICT_SYMBOL_ID_SYMBOL, get_info_quantity_to_trade
@@ -71,16 +71,6 @@ class Broker:
     def __init__(
         self,
         credentials: Dict[str, str],
-        price_sendersubid: str,
-        trade_sendersubid: str,
-        price_msgseqnum: int,
-        trade_msgseqnum: int,
-        bid: float,
-        ask: float,
-        positions: List[Dict[str, Any]],
-        num_opened_positions: int,
-        orders: List[Dict[str, Any]],
-        num_opened_orders: int,
     ):
         """Init."""
         # credentials
@@ -91,17 +81,17 @@ class Broker:
         self.type = credentials["type"]
         self.sendercompid = f"{self.type}.{self.broker}.{self.account}"
         #
-        self.price_msgseqnum = price_msgseqnum
-        self.trade_msgseqnum = trade_msgseqnum
-        self.price_sendersubid = price_sendersubid
-        self.trade_sendersubid = trade_sendersubid
-        self.bid = bid
-        self.ask = ask
+        self.price_msgseqnum = 1
+        self.trade_msgseqnum = 1
+        self.price_sendersubid = ""
+        self.trade_sendersubid = ""
+        self.bid = 0.0
+        self.ask = 0.0
 
-        self.positions = positions
-        self.num_opened_positions = num_opened_positions
-        self.orders = orders
-        self.num_opened_orders = num_opened_orders
+        self.positions: Set[Dict[str, Any]] = []
+        self.num_opened_positions = 0
+        self.orders: List[Dict[str, Any]] = []
+        self.num_opened_orders: int = 0
 
     def set_asset(self, symbol: str) -> None:
         """Set Asset with name and ID as specific for cTrader."""

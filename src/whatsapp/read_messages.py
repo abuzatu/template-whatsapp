@@ -82,19 +82,7 @@ class ReadMessages:
             credentials = [c for c in yaml_data["accounts"] if c["name"] == account_name][
                 0
             ]
-            self.accounts[account_name] = Broker(
-                credentials=credentials,
-                price_sendersubid=None,
-                trade_sendersubid=None,
-                price_msgseqnum=1,
-                trade_msgseqnum=1,
-                bid=0.0,
-                ask=0.0,
-                positions=[],
-                num_opened_positions=0,
-                orders=[],
-                num_opened_orders=0,
-            )
+            self.accounts[account_name] = Broker(credentials=credentials)
             # for now we receive the prices for just one symbol
             self.accounts[account_name].set_asset(symbol="EURUSD")
         print("Demo FIX API Application - 2023")
