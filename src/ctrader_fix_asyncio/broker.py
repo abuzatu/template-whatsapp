@@ -697,7 +697,7 @@ class Broker:
         position_id: Optional[str] = None,
     ) -> None:
         """Async function to set one order, to be called from the main for loop."""
-        cancel_order = self.fix_set_order(
+        set_order = self.fix_set_order(
             symbol,
             direction,
             order_type,
@@ -706,8 +706,8 @@ class Broker:
             position_id,
         )
         try:
-            self.print_fix_message("cancel_order", cancel_order)
-            self.trade_writer.write(bytes(cancel_order, "UTF-8"))
+            self.print_fix_message("set_order", set_order)
+            self.trade_writer.write(bytes(set_order, "UTF-8"))
         except Exception as e:
             print(f"{self.broker}, async_set_order not working! exception={e}")
 

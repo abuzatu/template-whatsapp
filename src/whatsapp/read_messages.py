@@ -56,18 +56,13 @@ from configs.ctrader_demo import (
 
 # get one account from the config
 CONFIG_FILE_NAME = f"{work_dir()}/src/configs/config_accounts.yaml"
-ACCOUNT_NAME = (
-    "Hishal"
-    # "Vinay"
-    # "PMT"
-)
-account_names = ["Hishal", "Vinay", "PMT"]
+
+account_names = ["PGR", "Vinay", "PMT-1", "PMT-2"]
 
 # Open the YAML file
 with open(CONFIG_FILE_NAME, "r") as file:
     # Load the YAML content
     yaml_data = yaml.load(file, Loader=yaml.FullLoader)
-credentials = [c for c in yaml_data["accounts"] if c["name"] == ACCOUNT_NAME][0]
 
 
 class ReadMessages:
@@ -775,45 +770,52 @@ class ReadMessages:
     async def trade_async(self, o: Order) -> None:
         """Trade based on the order received."""
         print("Start trade")
-        if o.author == "PGV" or o.author == "PGH" or o.author == "ME2":
-            # Pigs Gainer Vinay
-            account_name = "Vinay"
+        if o.author == "PGV":
+            # Pips Gainer Vinay
+            account_names = ["Vinay"]
+        elif o.author == "PGH" or o.author == "PGR" or o.author == "ME2":
+            # Pips Gainer Research. Harsh or ME2
+            account_names = ["PGR"]
         elif o.author == "PMT" or o.author == "ME1":
-            account_name = "PMT"
+            # Paramount Info Tech or ME1
+            account_names = ["PMT-1", "PMT-2"]
         else:
-            account_name = "Hishal"
+            account_names = ["Vinay"]
 
         # do the trade
         if o.action == "open":
-            print(f"****  Opening order for symbol={o.symbol} with order o={o} ******")
-            asyncio.create_task(
-                self.accounts[account_name].set_order(
-                    symbol=o.symbol,
-                    direction=o.direction,
-                    order_type=o.type,
-                    quantity_to_trade=get_info_quantity_to_trade(o.symbol)[0],
-                    price=None if o.type == "market" else o.EPs[0],
-                    position_id=None,
+            for account_name in account_names:
+                print(
+                    f"****  Opening in account={account_name} an order "
+                    f"for symbol={o.symbol} with order o={o} ******"
                 )
-            )
-            print(f"****  Opened order for symbol={o.symbol} with order o={o} ******")
+                asyncio.create_task(
+                    self.accounts[account_name].set_order(
+                        symbol=o.symbol,
+                        direction=o.direction,
+                        order_type=o.type,
+                        quantity_to_trade=get_info_quantity_to_trade(o.symbol)[1],
+                        price=None if o.type == "market" else o.EPs[0],
+                        position_id=None,
+                    )
+                )
+                print(
+                    f"****  Opened in account={account_name} and order "
+                    f"for symbol={o.symbol} with order o={o} ******"
+                )
         elif o.action == "close":
-            print(
-                f"****  Closing positions for symbol={o.symbol} with order o={o} ******"
-            )
-            position_ids = await self.accounts[
-                account_name
-            ].close_all_positions_for_one_symbol(o.symbol)
-            print(
-                f"***** Closed positions for symbol={o.symbol}: "
-                f"position_ids={position_ids} ****"
-            )
-            # api.close(symbol)
-        else:
+            for account_name in account_names:
+                print(
+                    f"****  Closing in account={account_name} the positions "
+                    f"for symbol={o.symbol} with order o={o} ******"
+                )
+                position_ids = await self.accounts[
+                    account_name
+                ].close_all_positions_for_one_symbol(o.symbol)
+                print(
+                    f"***** Closed in account={account_name} the positions "
+                    f"for symbol={o.symbol}: "
+                    f"position_ids={position_ids} ****"
+                )
             print(f"Action {o.action} not known, need open or close, for order = {o}")
         await asyncio.sleep(0.01)
-        # close the connection
-        # api.logout()
-        # await asyncio.sleep(2)
-        # to be safe delete the api object
-        # del api
