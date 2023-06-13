@@ -54,6 +54,8 @@ from configs.ctrader_demo import (
     DEBUG,
 )
 
+DO_CTRADER = True
+
 # get one account from the config
 CONFIG_FILE_NAME = f"{work_dir()}/src/configs/config_accounts.yaml"
 
@@ -143,13 +145,13 @@ class ReadMessages:
         The requests for positions and orders are sent at every heartbeat,
         then the ansewrs can come right away.
         """
-        if True:
+        if DO_CTRADER and True:
             print("A")
             # login to the price streams for all brokers
             for account_name in self.accounts:
                 print("B")
                 asyncio.create_task(self.accounts[account_name].price_login())
-        if True:
+        if DO_CTRADER and True:
             # login to the trade streams for all brokers
             for account_name in self.accounts:
                 asyncio.create_task(self.accounts[account_name].trade_login())
@@ -304,7 +306,7 @@ class ReadMessages:
                         print(f"... {str(counter).zfill(3)}, {pd.Timestamp.now()}")
                         for account_name in self.accounts:
                             # prices
-                            if True:
+                            if DO_CTRADER and True:
                                 print(
                                     f"ACCOUNT={account_name}, prices: "
                                     f"asset={self.accounts[account_name].symbol}, "
@@ -312,18 +314,18 @@ class ReadMessages:
                                     f"ask={self.accounts[account_name].ask}"
                                 )
                             # positions
-                            if False:
+                            if DO_CTRADER and True:
                                 print(
                                     f"ACCOUNT={account_name}, positions: "
                                     f"num_opened_positions = "
                                     f"{self.accounts[account_name].num_opened_positions}, "
                                     f"len(positions) = {len(self.accounts[account_name].positions)}"
                                 )
-                            # print(f"positions = {self.accounts[account_name].positions}")
-                            for position in self.accounts[account_name].positions:
-                                print(f"position = {position}")
+                                # print(f"positions = {self.accounts[account_name].positions}")
+                                for position in self.accounts[account_name].positions:
+                                    print(f"position = {position}")
                             # orders
-                            if False:
+                            if DO_CTRADER and True:
                                 print(
                                     f"ACCOUNT={account_name}, orders: "
                                     f"num_opened_orders = "
@@ -334,7 +336,7 @@ class ReadMessages:
                                 for order in self.accounts[account_name].orders:
                                     print(f"order = {order}")
 
-                            if False and counter == 2:
+                            if DO_CTRADER and False and counter == 2:
                                 await self.accounts[account_name].set_order_examples(
                                     symbol="AUDUSD",
                                     price_low=0.6700,
@@ -342,7 +344,7 @@ class ReadMessages:
                                     num_repeats=1,
                                 )
 
-                            if False and counter == 5:
+                            if DO_CTRADER and False and counter == 5:
                                 position_ids = await self.accounts[
                                     account_name
                                 ].close_all_positions()
@@ -350,7 +352,7 @@ class ReadMessages:
                                     f"Closed all positions: position_ids={position_ids}"
                                 )
 
-                            if False and counter == 6:
+                            if DO_CTRADER and False and counter == 6:
                                 order_ids = await self.accounts[
                                     account_name
                                 ].cancel_all_orders()
@@ -453,15 +455,15 @@ class ReadMessages:
                         print("************************************************")
                         print("************************************************")
                         print("************************************************")
-                        # continue
-                        request_logger.info("Trading orders built")
-                        for i, o in enumerate(orders):
-                            # continue
-                            # act on the order
-                            try:
-                                await self.trade_async(o)
-                            except RuntimeError:
-                                print(f"WARNING! Not able to trade for order o={o}")
+                        if DO_CTRADER:
+                            request_logger.info("Trading orders built")
+                            for i, o in enumerate(orders):
+                                # continue
+                                # act on the order
+                                try:
+                                    await self.trade_async(o)
+                                except RuntimeError:
+                                    print(f"WARNING! Not able to trade for order o={o}")
                     request_logger.debug("End receive_messages()")
                     file.flush()  # Flush the buffer to write the data after one contact
                     if counter % 1 == 0:
