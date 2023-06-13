@@ -575,7 +575,7 @@ class Broker:
         So far supporting only one asset.
         """
         try:
-            # print(f"Logging into broker='{self.broker}' for PRICE stream...")
+            print(f"INFO: Logging into broker='{self.broker}' for PRICE stream...")
             self.price_reader, self.price_writer = await asyncio.open_connection(
                 self.hostname, 5201
             )
@@ -603,12 +603,12 @@ class Broker:
             # print("Price E")
         except Exception as e:
             await asyncio.sleep(1)
-            print(f"PRICE connection refused login error! exception={e}.")
+            print(f"ERROR PRICE connection refused login error! exception={e}.")
 
     async def trade_login(self) -> None:
         """Login to trade stream on port 5202."""
         try:
-            print(f"Logging into broker='{self.broker}' for TRADE stream...")
+            print(f"INFO: Logging into broker='{self.broker}' for TRADE stream...")
             self.trade_reader, self.trade_writer = await asyncio.open_connection(
                 self.hostname, 5202
             )
@@ -631,7 +631,7 @@ class Broker:
             # print("Trade E")
         except Exception as e:
             await asyncio.sleep(1)
-            print(f"TRADE connection refused login error! exception={e}.")
+            print(f"ERROR: TRADE connection refused login error! exception={e}.")
 
     """Heartbeat methods for price and trade streams."""
 
@@ -652,7 +652,7 @@ class Broker:
                 #
                 self.price_writer.write(bytes(fix_message, "UTF-8"))
             except Exception as e:
-                print(f"There was a PRICE heartbeat error... {e}")
+                print(f"ERROR There was a PRICE heartbeat error... {e}")
                 break
             await asyncio.sleep(1)
 
@@ -676,12 +676,12 @@ class Broker:
                 fix_message += fix_request_positions
                 fix_message += fix_request_orders
                 #
-                # self.positions = []
-                # self.orders = []
+                self.positions = []
+                self.orders = []
                 #
                 self.trade_writer.write(bytes(fix_message, "UTF-8"))
             except Exception as e:
-                print(f"There was a TRADE heartbeat error... {e}")
+                print(f"ERROR: There was a TRADE heartbeat error... {e}")
                 break
             await asyncio.sleep(1)
 
@@ -709,7 +709,7 @@ class Broker:
             self.print_fix_message("set_order", set_order)
             self.trade_writer.write(bytes(set_order, "UTF-8"))
         except Exception as e:
-            print(f"{self.broker}, async_set_order not working! exception={e}")
+            print(f"ERROR: {self.broker}, async_set_order not working! exception={e}")
 
     async def set_order_examples(
         self,
@@ -777,7 +777,7 @@ class Broker:
             self.print_fix_message("fix_set_orders", fix_set_orders)
             self.trade_writer.write(bytes(fix_set_orders, "UTF-8"))
         except Exception as e:
-            print(f"{self.broker} setting orders not working! {e}")
+            print(f"ERROR: {self.broker} setting orders not working! {e}")
 
     async def cancel_order(
         self,
@@ -792,7 +792,7 @@ class Broker:
             self.trade_writer.write(bytes(fix_cancel_orders, "UTF-8"))
         except Exception as e:
             print(
-                f"Unable to cancel order of order_id={order_id}, "
+                f"ERROR: Unable to cancel order of order_id={order_id}, "
                 f"on {self.broker}, with exception={e}."
             )
         # remove all the orders that have order_id we want
@@ -986,7 +986,7 @@ class Broker:
                     second = await self.price_reader.read(ti + 7)
                     # print(f"second={second}")
                     full_message = header + second.decode().replace("\u0001", "|")
-                    print(f"full_message={full_message}")
+                    # print(f"INFO: Read price data: full_message={full_message}")
                     if "35=W" in full_message:
                         # print("Price stream 35=W was found, "
                         #       "so search for prices the fields with 270"
@@ -1054,8 +1054,8 @@ class Broker:
                             self.num_opened_positions = d["num_opened_positions"]
                     elif "35=8" in full_message:
                         # this is a response to a request for orders
-                        if "543140337" in full_message:
-                            print(f"trade response order: full_message={full_message}")
+                        #if "543140337" in full_message:
+                        print(f"INFO: trade response order EXECUTION REPORT: full_message={full_message}")
                         d = self.parse_one_order_message(full_message)
                         # print(d)
                         # print(f"len(self.orders)={len(self.orders)}")
@@ -1070,13 +1070,56 @@ class Broker:
                             self.orders.append(d)
                             self.num_opened_orders = d["num_opened_orders"]
                     elif "35=j" in full_message:
-                        print(
-                            f"trade response order CANCEL FAILURE: "
-                            f"full_message={full_message}"
-                        )
+                        if True:
+                            print(
+                                f"trade response order SET ORDER NOT EXECUTED: "
+                                f"full_message={full_message}"
+                            )
+                    elif "35=9" in full_message:
+                        if True:
+                            print(
+                                f"trade response order CANCEL ORDER NOT EXECUTED: "
+                                f"full_message={full_message}"
+                            )
+                    elif "35=0" in full_message:
+                        if False:
+                            print(
+                                f"trade response HEARTBEAT: "
+                                f"full_message={full_message}"
+                            )
+                    elif "35=1" in full_message:
+                        if False:
+                            print(
+                                f"trade response FORCED HEARTBEAT: "
+                                f"full_message={full_message}"
+                            )
+                    elif "35=2" in full_message:
+                        if True:
+                            print(
+                                f"trade response RESEND REQUEST: "
+                                f"full_message={full_message}"
+                            )
+                    elif "35=3" in full_message:
+                        if True:
+                            print(
+                                f"trade response REJECT BIRECTIONAL MUST BE INCREMENTED SEQUENCE NUMBER: "
+                                f"full_message={full_message}"
+                            )
+                    elif "35=4" in full_message:
+                        if True:
+                            print(
+                                f"trade response SEQUENCE RESET: "
+                                f"full_message={full_message}"
+                            )
+                    elif "35=5" in full_message:
+                        if True:
+                            print(
+                                f"trade response LOGOUT message sent: "
+                                f"full_message={full_message}"
+                            )
                     else:
                         print(
-                            f"trade response order UNKNOWN CATEGORY: "
+                            f"WARNING: trade response order UNKNOWN CATEGORY: "
                             f"full_message={full_message}"
                         )
 
