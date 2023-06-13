@@ -85,8 +85,13 @@ DICT_WORD_SYMBOL = {
     "GOLD": "XAUUSD",
     "OIL": "XTIUSD",
     "WTI": "XTIUSD",
+    "XTI": "XTIUSD",
     "NASDAQ": "USTEC",
+    "SP500": "US500",
+    "RUSSEL": "US2000",
+    "DOW": "US30",
     "GER40": "DE40",
+    "GE40": "DE40",
 }
 
 """Functions."""

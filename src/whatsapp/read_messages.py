@@ -289,7 +289,7 @@ class ReadMessages:
                 print("************************************")
                 print(f"******* COUNTER ={counter} ********")
                 print("************************************")
-                if counter < 10 or counter % 10 == 0:
+                if counter < 10 or counter % 2 == 0:
                     # pass
                     print(f"... {str(counter).zfill(3)}, {pd.Timestamp.now()}")
                 # read the messages for each contact in this loop
@@ -306,7 +306,7 @@ class ReadMessages:
                         print(f"... {str(counter).zfill(3)}, {pd.Timestamp.now()}")
                         for account_name in self.accounts:
                             # prices
-                            if DO_CTRADER and True:
+                            if DO_CTRADER and False:
                                 print(
                                     f"ACCOUNT={account_name}, prices: "
                                     f"asset={self.accounts[account_name].symbol}, "
@@ -314,7 +314,7 @@ class ReadMessages:
                                     f"ask={self.accounts[account_name].ask}"
                                 )
                             # positions
-                            if DO_CTRADER and True:
+                            if DO_CTRADER and False:
                                 print(
                                     f"ACCOUNT={account_name}, positions: "
                                     f"num_opened_positions = "
@@ -325,7 +325,7 @@ class ReadMessages:
                                 for position in self.accounts[account_name].positions:
                                     print(f"position = {position}")
                             # orders
-                            if DO_CTRADER and True:
+                            if DO_CTRADER and False:
                                 print(
                                     f"ACCOUNT={account_name}, orders: "
                                     f"num_opened_orders = "
@@ -357,6 +357,9 @@ class ReadMessages:
                                     account_name
                                 ].cancel_all_orders()
                                 print(f"Closed all orders: order_ids={order_ids}")
+
+                    # await asyncio.sleep(3)
+                    # continue
 
                     if counter % 1 == 0:
                         request_logger.debug(

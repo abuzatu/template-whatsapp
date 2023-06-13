@@ -676,8 +676,8 @@ class Broker:
                 fix_message += fix_request_positions
                 fix_message += fix_request_orders
                 #
-                self.positions = []
-                self.orders = []
+                # self.positions = []
+                # self.orders = []
                 #
                 self.trade_writer.write(bytes(fix_message, "UTF-8"))
             except Exception as e:
@@ -706,7 +706,9 @@ class Broker:
             position_id,
         )
         try:
+            print("*************************************")
             self.print_fix_message("set_order", set_order)
+            print("*************************************")
             self.trade_writer.write(bytes(set_order, "UTF-8"))
         except Exception as e:
             print(f"ERROR: {self.broker}, async_set_order not working! exception={e}")
@@ -1054,8 +1056,10 @@ class Broker:
                             self.num_opened_positions = d["num_opened_positions"]
                     elif "35=8" in full_message:
                         # this is a response to a request for orders
-                        #if "543140337" in full_message:
-                        print(f"INFO: trade response order EXECUTION REPORT: full_message={full_message}")
+                        # if "543140337" in full_message:
+                        print(
+                            f"INFO: trade response order EXECUTION REPORT: full_message={full_message}"
+                        )
                         d = self.parse_one_order_message(full_message)
                         # print(d)
                         # print(f"len(self.orders)={len(self.orders)}")
@@ -1099,7 +1103,14 @@ class Broker:
                                 f"trade response RESEND REQUEST: "
                                 f"full_message={full_message}"
                             )
+                    elif "35=A" in full_message:
+                        if True:
+                            print(
+                                f"trade response LOGON BIRECTIONAL: "
+                                f"full_message={full_message}"
+                            )
                     elif "35=3" in full_message:
+                        # self.trade_msgseqnum += 1
                         if True:
                             print(
                                 f"trade response REJECT BIRECTIONAL MUST BE INCREMENTED SEQUENCE NUMBER: "

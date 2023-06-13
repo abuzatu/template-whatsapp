@@ -128,16 +128,14 @@ assets_all = {
     "EURRUB": {"symbol_id": 1023, "symbol_num_digits": 3},
 }
 
-DICT_SYMBOL_ID_SYMBOL = {
-    assets_all[symbol]["symbol_id"]: symbol for symbol in assets_all
-}
+DICT_SYMBOL_ID_SYMBOL = {assets_all[symbol]["symbol_id"]: symbol for symbol in assets_all}
 # sort by keys
 DICT_SYMBOL_ID_SYMBOL = dict(sorted(DICT_SYMBOL_ID_SYMBOL.items()))
 
 
 def get_info_quantity_to_trade(symbol: str) -> Tuple[float, float]:
     """Return the minimum and our allowed quantities to trade for a given asset."""
-    if symbol in ["US30", "USTEC", "US500", "DE40"]:
+    if symbol in ["US30", "USTEC", "US500", "US2000", "DE40"]:
         # US indices: 1 lot = 1 unit
         min_quantity_to_trade = 1.0
         our_quantity_to_trade = 1.0
