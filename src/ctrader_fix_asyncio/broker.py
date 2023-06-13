@@ -7,7 +7,7 @@ import random
 import re
 import socket
 import time
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Union
 
 # our modules
 from configs.assets import assets_all, DICT_SYMBOL_ID_SYMBOL, get_info_quantity_to_trade
@@ -81,6 +81,10 @@ class Broker:
         self.type = credentials["type"]
         self.sendercompid = f"{self.type}.{self.broker}.{self.account}"
         #
+        self.price_reader = None
+        self.price_writer = None
+        self.trade_reader = None
+        self.trade_writer = None
         self.price_msgseqnum = 1
         self.trade_msgseqnum = 1
         self.price_sendersubid = ""
@@ -88,9 +92,10 @@ class Broker:
         self.bid = 0.0
         self.ask = 0.0
 
-        self.positions: Set[Dict[str, Any]] = []
+        self.positions: List[Dict[str, Union[str, int, float]]] = []
+        self.position_ids: Set[str] = set()
         self.num_opened_positions = 0
-        self.orders: List[Dict[str, Any]] = []
+        self.orders: List[Dict[str, Union[str, int, float]]] = []
         self.num_opened_orders: int = 0
 
     def set_asset(self, symbol: str) -> None:
@@ -549,11 +554,15 @@ class Broker:
         # print(f"d={d}")
         return d
 
-    def get_all_position_ids(self, positions: List[Dict[str, Any]]) -> List[str]:
+    def get_all_position_ids(
+        self, positions: Set[Dict[str, Union[str, int, float]]]
+    ) -> List[str]:
         """Get a list of the position_ids that we have from positions."""
         return [position["position_id"] for position in positions]
 
-    def get_all_order_ids(self, orders: List[Dict[str, Any]]) -> List[str]:
+    def get_all_order_ids(
+        self, orders: Set[Dict[str, Union[str, int, float]]]
+    ) -> List[str]:
         """Get a list of the order_ids that we have from orders."""
         return [order["order_id"] for order in orders]
 
@@ -658,13 +667,13 @@ class Broker:
                 # self.print_fix_message("fix_trade_heartbeat", fix_trade_heartbeat)
                 fix_request_positions = self.fix_request_positions()
                 # self.print_fix_message("fix_request_positions", fix_request_positions)
-                fix_request_orders = self.fix_request_orders()
+                # fix_request_orders = self.fix_request_orders()
                 # self.print_fix_message("fix_request_orders", fix_request_orders)
                 #
                 fix_message = ""
                 fix_message += fix_trade_heartbeat
                 fix_message += fix_request_positions
-                fix_message += fix_request_orders
+                # fix_message += fix_request_orders
                 #
                 # self.positions = []
                 # self.orders = []
@@ -782,6 +791,7 @@ class Broker:
         try:
             self.print_fix_message("fix_cancel_orders", fix_cancel_orders)
             self.trade_writer.write(bytes(fix_cancel_orders, "UTF-8"))
+            self.orders = [d for d in self.orders if d["order_id"] != order_id]
         except Exception as e:
             print(
                 f"ERROR: Unable to cancel order of order_id={order_id}, "
@@ -790,7 +800,8 @@ class Broker:
         # remove all the orders that have order_id we want
         # usually it should be only one, but just in case
         # use list comprehension to be faster and more concise
-        self.orders = [d for d in self.orders if d["order_id"] != order_id]
+        # self.orders = [d for d in self.orders if d["order_id"] != order_id]
+        # self.orders.discard(order_id)
 
     async def cancel_all_orders_for_one_position(
         self,
@@ -806,6 +817,7 @@ class Broker:
         try:
             self.print_fix_message("fix_cancel_orders", fix_cancel_orders)
             self.trade_writer.write(bytes(fix_cancel_orders, "UTF-8"))
+            self.orders = [d for d in self.orders if d["order_id"] not in order_ids]
         except Exception as e:
             print(
                 f"Unable to cancel order of order_id={order_id}, "
@@ -829,6 +841,10 @@ class Broker:
         try:
             self.print_fix_message("fix_cancel_orders", fix_cancel_orders)
             self.trade_writer.write(bytes(fix_cancel_orders, "UTF-8"))
+            # remove all the orders that have order_id we want
+            # for order_id in order_ids:
+            #    self.orders.discard(order_id)
+            self.orders = [d for d in self.orders if d["order_id"] not in order_ids]
         except Exception as e:
             print(
                 f"Unable to cancel order of order_id={order_id}, "
@@ -852,6 +868,9 @@ class Broker:
         try:
             self.print_fix_message("fix_cancel_orders", fix_cancel_orders)
             self.trade_writer.write(bytes(fix_cancel_orders, "UTF-8"))
+            # remove all the orders that have order_id we want
+            for order_id in order_ids:
+                self.orders.discard(order_id)
         except Exception as e:
             print(
                 f"Unable to cancel order of order_id={order_id}, "
@@ -874,6 +893,9 @@ class Broker:
         try:
             self.print_fix_message("fix_cancel_orders", fix_cancel_orders)
             self.trade_writer.write(bytes(fix_cancel_orders, "UTF-8"))
+            # remove all the orders that have order_id we want
+            for order_id in order_ids:
+                self.orders.discard(order_id)
         except Exception as e:
             print(
                 f"Unable to cancel order of order_id={order_id}, "
@@ -915,9 +937,11 @@ class Broker:
             self.print_fix_message("fix_close_positions", fix_close_positions)
             self.trade_writer.write(bytes(fix_close_positions, "UTF-8"))
             # remove from the list of positions
+            asyncio.sleep(0.1)
             self.positions = [
                 d for d in self.positions if d["position_id"] != position_id
             ]
+            # self.position_ids.discard(position_id)
             # also close all orders for that position
             await self.cancel_all_orders_for_one_position(position_id)
         except Exception as e:
@@ -1027,7 +1051,7 @@ class Broker:
                     second = await self.trade_reader.read(ti + 7)
                     # print(f"second={second}")
                     full_message = header + second.decode().replace("\u0001", "|")
-                    # print(f"trade response: full_message={full_message}")
+                    # print(f"INFO: trade response: full_message={full_message}")
                     if "35=AP" in full_message:
                         # this is a response to a request for positions
                         # print(f"trade response position: full_message={full_message}")
@@ -1039,17 +1063,49 @@ class Broker:
                         # print("Z")
                         # print(f"self.get_all_position_ids(self.orders)={self.get_all_position_ids(self.positions)}")  # noqa
                         # print("W")
-                        if (d is not None) and d[
-                            "position_id"
-                        ] not in self.get_all_position_ids(self.positions):
+                        # print(f"len(self.positions)={len(self.positions)}")
+                        # print(self.positions)
+                        # print("our new position received")
+                        # print(f"d={d}")
+                        # print("Check if it exists in the set of positions")
+                        # if d is not None:
+                        # self.positions.add(d)
+                        # self.position_ids.add(d["position_id"])
+
+                        # print("BBB")
+                        # print(self.positions)
+                        # print(self.position_ids)
+                        # print(f"d={d}")
+                        # print("CCC")
+                        if (
+                            True
+                            and (d is not None)
+                            and d["position_id"]
+                            not in self.get_all_position_ids(self.positions)
+                        ):
+                            # ] not in self.position_ids:
+                            # print("A")
+                            # print("position does not exist in the set of positions")
                             self.positions.append(d)
+                            # print("B")
+                            # self.position_ids.add(d["position_id"])
+                            # print("C")
+                            # print("We added it to the set of possitions")
                             self.num_opened_positions = d["num_opened_positions"]
+                            # print("D")
+                        # print("E")
+                        # print(
+                        # f"after adding position len(self.positions)={len(self.positions)}, "
+                        # f"num_opened_positions={self.num_opened_positions},"
+                        # f"position_ids={self.position_ids}"
+                        # )
+                        # print(self.positions)
                     elif "35=8" in full_message:
                         # this is a response to a request for orders
                         # if "543140337" in full_message:
-                        print(
-                            f"INFO: trade response order EXECUTION REPORT: full_message={full_message}"
-                        )
+                        # print(
+                        #    f"INFO: trade response order EXECUTION REPORT: full_message={full_message}"
+                        # )
                         d = self.parse_one_order_message(full_message)
                         # print(d)
                         # print(f"len(self.orders)={len(self.orders)}")
@@ -1064,13 +1120,13 @@ class Broker:
                             self.orders.append(d)
                             self.num_opened_orders = d["num_opened_orders"]
                     elif "35=j" in full_message:
-                        if True:
+                        if False:
                             print(
                                 f"trade response order SET ORDER NOT EXECUTED: "
                                 f"full_message={full_message}"
                             )
                     elif "35=9" in full_message:
-                        if True:
+                        if False:
                             print(
                                 f"trade response order CANCEL ORDER NOT EXECUTED: "
                                 f"full_message={full_message}"
@@ -1088,26 +1144,26 @@ class Broker:
                                 f"full_message={full_message}"
                             )
                     elif "35=2" in full_message:
-                        if True:
+                        if False:
                             print(
                                 f"trade response RESEND REQUEST: "
                                 f"full_message={full_message}"
                             )
                     elif "35=A" in full_message:
-                        if True:
+                        if False:
                             print(
                                 f"trade response LOGON BIRECTIONAL: "
                                 f"full_message={full_message}"
                             )
                     elif "35=3" in full_message:
                         # self.trade_msgseqnum += 1
-                        if True:
+                        if False:
                             print(
                                 f"trade response REJECT BIRECTIONAL MUST BE INCREMENTED SEQUENCE NUMBER: "
                                 f"full_message={full_message}"
                             )
                     elif "35=4" in full_message:
-                        if True:
+                        if False:
                             print(
                                 f"trade response SEQUENCE RESET: "
                                 f"full_message={full_message}"

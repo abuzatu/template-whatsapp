@@ -61,6 +61,7 @@ CONFIG_FILE_NAME = f"{work_dir()}/src/configs/config_accounts.yaml"
 
 # account_names = ["PGR", "Vinay", "PMT-1", "PMT-2"]
 account_names = ["PGR", "Vinay", "PMT-1"]
+# account_names = ["PMT-1"]
 
 
 # Open the YAML file
@@ -145,75 +146,6 @@ class ReadMessages:
                 asyncio.create_task(self.accounts[account_name].trade_login())
         await asyncio.sleep(0)
 
-    async def show(self) -> None:
-        """The main while loop that keeps repeating.
-
-        Originally it was the show window when created in the event loop.
-
-        But no window for now. So we just wait.
-        """
-        # await asyncio.sleep(500)
-        counter = 0
-        while True:
-            counter += 1
-            # print("I am in show() - the for loop, refresh every 3 seconds.")
-            print()
-            print("************************************")
-            print(f"******* COUNTER ={counter} ********")
-            print("************************************")
-
-            for account_name in self.accounts:
-                # prices
-                if True:
-                    print(
-                        f"ACCOUNT={account_name}, prices: "
-                        f"asset={self.accounts[account_name].symbol}, "
-                        f"bid={self.accounts[account_name].bid}, "
-                        f"ask={self.accounts[account_name].ask}"
-                    )
-                # positions
-                if True:
-                    print(
-                        f"ACCOUNT={account_name}, positions: "
-                        f"num_opened_positions = "
-                        f"{self.accounts[account_name].num_opened_positions}, "
-                        f"len(positions) = {len(self.accounts[account_name].positions)}"
-                    )
-                    # print(f"positions = {self.accounts[account_name].positions}")
-                    for position in self.accounts[account_name].positions:
-                        print(f"position = {position}")
-                # orders
-                if True:
-                    print(
-                        f"ACCOUNT={account_name}, orders: "
-                        f"num_opened_orders = "
-                        f"{self.accounts[account_name].num_opened_orders}, "
-                        f"len(orders) = {len(self.accounts[account_name].orders)}"
-                    )
-                    # print(f"positions = {self.accounts[account_name].positions}")
-                    for order in self.accounts[account_name].orders:
-                        print(f"order = {order}")
-
-                if True and counter == 2:
-                    await self.accounts[account_name].set_order_examples(
-                        symbol="AUDUSD",
-                        price_low=0.6700,
-                        price_high=0.6800,
-                        num_repeats=1,
-                    )
-
-                if True and counter == 5:
-                    position_ids = await self.accounts[account_name].close_all_positions()
-                    print(f"Closed all positions: position_ids={position_ids}")
-
-                if True and counter == 6:
-                    order_ids = await self.accounts[account_name].cancel_all_orders()
-                    print(f"Closed all orders: order_ids={order_ids}")
-
-                continue
-            # wait 5 seconds for the current counter
-            await asyncio.sleep(5)
-
     async def quit_driver(self) -> None:
         """Quit driver (closes all windows).
 
@@ -294,7 +226,7 @@ class ReadMessages:
                         print(f"... {str(counter).zfill(3)}, {pd.Timestamp.now()}")
                         for account_name in self.accounts:
                             # prices
-                            if DO_CTRADER and False:
+                            if DO_CTRADER and True:
                                 print(
                                     f"ACCOUNT={account_name}, prices: "
                                     f"asset={self.accounts[account_name].symbol}, "
@@ -302,18 +234,19 @@ class ReadMessages:
                                     f"ask={self.accounts[account_name].ask}"
                                 )
                             # positions
-                            if DO_CTRADER and False:
+                            if DO_CTRADER and True:
                                 print(
                                     f"ACCOUNT={account_name}, positions: "
                                     f"num_opened_positions = "
                                     f"{self.accounts[account_name].num_opened_positions}, "
-                                    f"len(positions) = {len(self.accounts[account_name].positions)}"
+                                    f"len(positions) = {len(self.accounts[account_name].positions)}, "
+                                    f"position_ids={self.accounts[account_name].position_ids}"
                                 )
                                 # print(f"positions = {self.accounts[account_name].positions}")
                                 for position in self.accounts[account_name].positions:
                                     print(f"position = {position}")
                             # orders
-                            if DO_CTRADER and False:
+                            if DO_CTRADER and True:
                                 print(
                                     f"ACCOUNT={account_name}, orders: "
                                     f"num_opened_orders = "
@@ -346,7 +279,7 @@ class ReadMessages:
                                 ].cancel_all_orders()
                                 print(f"Closed all orders: order_ids={order_ids}")
 
-                    # await asyncio.sleep(3)
+                    # await asyncio.sleep(1)
                     # continue
 
                     if counter % 1 == 0:
@@ -815,3 +748,72 @@ class ReadMessages:
                 )
             print(f"Action {o.action} not known, need open or close, for order = {o}")
         await asyncio.sleep(0.01)
+
+    async def show(self) -> None:
+        """The main while loop that keeps repeating.
+
+        Originally it was the show window when created in the event loop.
+
+        But no window for now. So we just wait.
+        """
+        # await asyncio.sleep(500)
+        counter = 0
+        while True:
+            counter += 1
+            # print("I am in show() - the for loop, refresh every 3 seconds.")
+            print()
+            print("************************************")
+            print(f"******* COUNTER ={counter} ********")
+            print("************************************")
+
+            for account_name in self.accounts:
+                # prices
+                if True:
+                    print(
+                        f"ACCOUNT={account_name}, prices: "
+                        f"asset={self.accounts[account_name].symbol}, "
+                        f"bid={self.accounts[account_name].bid}, "
+                        f"ask={self.accounts[account_name].ask}"
+                    )
+                # positions
+                if True:
+                    print(
+                        f"ACCOUNT={account_name}, positions: "
+                        f"num_opened_positions = "
+                        f"{self.accounts[account_name].num_opened_positions}, "
+                        f"len(positions) = {len(self.accounts[account_name].positions)}"
+                    )
+                    # print(f"positions = {self.accounts[account_name].positions}")
+                    for position in self.accounts[account_name].positions:
+                        print(f"position = {position}")
+                # orders
+                if False:
+                    print(
+                        f"ACCOUNT={account_name}, orders: "
+                        f"num_opened_orders = "
+                        f"{self.accounts[account_name].num_opened_orders}, "
+                        f"len(orders) = {len(self.accounts[account_name].orders)}"
+                    )
+                    # print(f"positions = {self.accounts[account_name].positions}")
+                    for order in self.accounts[account_name].orders:
+                        print(f"order = {order}")
+
+                if True and counter == 2:
+                    await self.accounts[account_name].set_order_examples(
+                        symbol="AUDUSD",
+                        price_low=0.6700,
+                        price_high=0.6800,
+                        num_repeats=1,
+                    )
+
+                if True and counter == 5:
+                    position_ids = await self.accounts[account_name].close_all_positions()
+                    print(f"Closed all positions: position_ids={position_ids}")
+
+                if True and counter == 6:
+                    order_ids = await self.accounts[account_name].cancel_all_orders()
+                    print(f"Closed all orders: order_ids={order_ids}")
+
+                continue
+            # wait 5 seconds for the current counter
+            await asyncio.sleep(5)
