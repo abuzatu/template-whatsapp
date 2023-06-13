@@ -205,10 +205,7 @@ class ReadMessages:
             while True:
                 # increase the counter of the loop to keep track
                 counter += 1
-                print()
-                print("************************************")
-                print(f"******* COUNTER ={counter} ********")
-                print("************************************")
+
                 if counter < 10 or counter % 2 == 0:
                     # pass
                     print(f"... {str(counter).zfill(3)}, {pd.Timestamp.now()}")
@@ -216,7 +213,11 @@ class ReadMessages:
                 for contact in self.contacts:
                     # if the first loop, then create an empty list
                     # then we can append messages to it
-                    print(f"counter={counter}, contact={contact}")
+                    print()
+                    print("********************************************************")
+                    print(f"******* COUNTER ={counter} contact={contact}  ********")
+                    print("********************************************************")
+                    # print(f"counter={counter}, contact={contact}")
                     if counter == 1:
                         dict_contact_messages[contact] = []
                     # we can choose to print a . for each loop, to let us know
@@ -239,14 +240,13 @@ class ReadMessages:
                                     f"ACCOUNT={account_name}, positions: "
                                     f"num_opened_positions = "
                                     f"{self.accounts[account_name].num_opened_positions}, "
-                                    f"len(positions) = {len(self.accounts[account_name].positions)}, "
-                                    f"position_ids={self.accounts[account_name].position_ids}"
+                                    f"len(positions) = {len(self.accounts[account_name].positions)}."
                                 )
                                 # print(f"positions = {self.accounts[account_name].positions}")
                                 for position in self.accounts[account_name].positions:
                                     print(f"position = {position}")
                             # orders
-                            if DO_CTRADER and True:
+                            if DO_CTRADER and False:
                                 print(
                                     f"ACCOUNT={account_name}, orders: "
                                     f"num_opened_orders = "
@@ -746,6 +746,7 @@ class ReadMessages:
                     f"for symbol={o.symbol}: "
                     f"position_ids={position_ids} ****"
                 )
+        else:
             print(f"Action {o.action} not known, need open or close, for order = {o}")
         await asyncio.sleep(0.01)
 
